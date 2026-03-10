@@ -1,0 +1,42 @@
+name: km_drive
+description: KM Drive — официальное приложение KM Motors (Kassenov Motors) для владельцев автомобилей. Алматы, Казахстан.
+version: 1.0.0+1
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:  # Добавлено
+    sdk: flutter          # Добавлено
+
+  # UI & Animations
+  flutter_animate: ^4.5.0
+  percent_indicator: ^4.2.3
+  fl_chart: ^0.68.0
+  google_fonts: ^6.2.1
+
+  # 🗺️ Карта и геолокация
+  google_maps_flutter: ^2.9.0
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0             # Reverse geocoding — адрес по координатам
+
+  # Utilities
+  intl: ^0.20.2
+  equatable: ^2.0.5
+  shared_preferences: ^2.2.2
+
+  # Icons
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/km_jaqin.png
