@@ -10,6 +10,8 @@ import 'notifications_screen.dart';
 import 'settings_detail_screen.dart';
 import 'dealer_screen.dart';
 import 'warranty_screen.dart';
+import 'about_screen.dart';
+import 'subscriptions_screen.dart';
 
 // ============================================================
 // KM DRIVE — Profile Screen
@@ -55,6 +57,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               sliver: SliverToBoxAdapter(child: _BrandSection()),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              sliver: SliverToBoxAdapter(child: _SubscriptionsSection()),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -207,6 +213,130 @@ class _BrandSection extends StatelessWidget {
   }
 }
 
+
+// ── Subscriptions Section ────────────────────────────────────
+
+class _SubscriptionsSection extends StatefulWidget {
+  @override
+  State<_SubscriptionsSection> createState() => _SubscriptionsSectionState();
+}
+
+class _SubscriptionsSectionState extends State<_SubscriptionsSection> {
+  @override
+  void initState() {
+    super.initState();
+    // Обновляемся когда меняется план в SubscriptionsScreen
+    KmPlanState.instance.addListener(_onPlanChanged);
+  }
+
+  @override
+  void dispose() {
+    KmPlanState.instance.removeListener(_onPlanChanged);
+    super.dispose();
+  }
+
+  void _onPlanChanged() {
+    if (mounted) setState(() {});
+  }
+
+  (String, String, String, Color) _planInfo(AppLocalizations l10n) {
+    switch (KmPlanState.instance.activePlan) {
+      case KmPlan.start:
+        return (
+          l10n.get('subPlanStart'),
+          l10n.get('subPlanStartDesc'),
+          '🚗',
+          KmColors.success,
+        );
+      case KmPlan.pro:
+        return (
+          l10n.get('subPlanPro'),
+          l10n.get('subPlanProDesc'),
+          '⚡',
+          KmColors.accent,
+        );
+      case KmPlan.ultimate:
+        return (
+          l10n.get('subPlanUltimate'),
+          l10n.get('subPlanUltimateDesc'),
+          '👑',
+          KmColors.info,
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final (name, desc, icon, color) = _planInfo(l10n);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        KmSectionLabel(l10n.get('subscriptionsTitle')),
+        GestureDetector(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SubscriptionsScreen()),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(KmRadius.lg),
+              border: Border.all(color: color.withValues(alpha: 0.4), width: 0.5),
+            ),
+            child: Row(children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(KmRadius.sm),
+                ),
+                child: Center(
+                  child: Text(icon, style: const TextStyle(fontSize: 22)),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Text(l10n.get('subCurrent'),
+                          style: KmTextStyles.caption
+                              .copyWith(color: color)),
+                    ]),
+                    const SizedBox(height: 2),
+                    Text(name,
+                        style: KmTextStyles.bodyMedium
+                            .copyWith(fontWeight: FontWeight.w600)),
+                    Text(desc, style: KmTextStyles.caption),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'START  →  PRO  →  ULTIMATE',
+                        style: KmTextStyles.labelSmall
+                            .copyWith(color: color, letterSpacing: 0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: color, size: 20),
+            ]),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SettingsMenu extends StatelessWidget {
   static const List<_MenuItem> _items = [
     _MenuItem('🔔', 'settingsNotifications', 'settingsNotificationsDesc', 'settingsNotificationsBody', 'notifications'),
@@ -279,6 +409,10 @@ class _MenuRow extends StatelessWidget {
             case 'warranty':
               Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const WarrantyScreen()));
+              break;
+            case 'about':
+              Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AboutScreen()));
               break;
             default:
               Navigator.of(context).push(MaterialPageRoute(

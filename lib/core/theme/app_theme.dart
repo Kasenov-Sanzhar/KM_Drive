@@ -71,7 +71,7 @@ abstract class KmTextStyles {
 
   static const TextStyle displaySmall = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: FontWeight.w500,
     color: KmColors.textPrimary,
   );
@@ -94,7 +94,7 @@ abstract class KmTextStyles {
 
   static const TextStyle numeralSmall = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: FontWeight.w500,
     color: KmColors.textPrimary,
   );
@@ -102,7 +102,7 @@ abstract class KmTextStyles {
   // Основной текст: было 15/13/11 → стало 17/15/13
   static const TextStyle bodyLarge = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: FontWeight.w400,
     color: KmColors.textPrimary,
     height: 1.55,
@@ -110,7 +110,7 @@ abstract class KmTextStyles {
 
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: FontWeight.w400,
     color: KmColors.textPrimary,
     height: 1.5,
@@ -118,7 +118,7 @@ abstract class KmTextStyles {
 
   static const TextStyle bodySmall = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: FontWeight.w400,
     color: KmColors.textSecondary,
     height: 1.5,
@@ -127,7 +127,7 @@ abstract class KmTextStyles {
   // Метки: было 12/10/9 → стало 14/12/11
   static const TextStyle labelLarge = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: FontWeight.w500,
     color: KmColors.textPrimary,
     letterSpacing: 0.5,
@@ -153,7 +153,7 @@ abstract class KmTextStyles {
   // Caption: было 10 → стало 12
   static const TextStyle caption = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: FontWeight.w400,
     color: KmColors.textMuted,
     height: 1.45,
@@ -216,13 +216,13 @@ class KmTheme {
         elevation: 0,
         selectedLabelStyle: TextStyle(
           fontFamily: 'DMSans',
-          fontSize: 11,
+          fontSize: 12,
           letterSpacing: 0.3,
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: TextStyle(
           fontFamily: 'DMSans',
-          fontSize: 11,
+          fontSize: 12,
           letterSpacing: 0.3,
         ),
       ),

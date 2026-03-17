@@ -245,7 +245,7 @@ class KmQuickActionButton extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(KmRadius.lg),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(KmRadius.lg),
@@ -253,17 +253,17 @@ class KmQuickActionButton extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Container(
-                width: 28, height: 28,
+                width: 32, height: 32,
                 decoration: BoxDecoration(
                   color: iconBg,
                   borderRadius: BorderRadius.circular(KmRadius.sm),
                 ),
-                child: Center(child: Text(icon, style: const TextStyle(fontSize: 14))),
+                child: Center(child: Text(icon, style: const TextStyle(fontSize: 17))),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Text(
                 label,
                 style: KmTextStyles.bodyMedium.copyWith(
@@ -271,13 +271,13 @@ class KmQuickActionButton extends StatelessWidget {
                   color: isDanger ? KmColors.error : KmColors.textPrimary,
                   height: 1.2,
                 ),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: KmTextStyles.caption.copyWith(height: 1.2),
+                style: KmTextStyles.caption,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

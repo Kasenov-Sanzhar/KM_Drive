@@ -9,6 +9,7 @@ import 'notifications_screen.dart';
 import '../../data/services/notification_service.dart';
 import 'service_booking_screen.dart';
 import 'scan_screen.dart';
+import 'remote_control_screen.dart';
 import 'telemetry_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -350,16 +351,7 @@ class _QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final sh2 = MediaQuery.of(context).size.height;
-    final ratio = sh2 < 700 ? 2.1 : sh2 < 800 ? 1.95 : 1.85;
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: ratio,
-      children: [
+    return _QuickGrid(children: [
         KmQuickActionButton(
           icon: '🔧',
           label: l10n.get('bookService'),
@@ -370,14 +362,12 @@ class _QuickActionsGrid extends StatelessWidget {
           ),
         ),
         KmQuickActionButton(
-          icon: '📡',
-          label: l10n.get('scanVehicle'),
-          subtitle: l10n.get('scanCar'),
+          icon: '🔐',
+          label: l10n.get('remoteControl'),
+          subtitle: l10n.get('remoteControlSubtitle'),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (_) => ScanScreen(
-                onNavigateToDiagnostics: onNavigateToDiagnostics,
-              ),
+              builder: (_) => const RemoteControlScreen(),
             ),
           ),
         ),
@@ -401,8 +391,35 @@ class _QuickActionsGrid extends StatelessWidget {
             builder: (_) => const _SosDialog(),
           ),
         ),
-      ],
-    );
+    ]);
+  }
+}
+
+// ── Auto-height 2-column grid ────────────────────────────────
+
+class _QuickGrid extends StatelessWidget {
+  const _QuickGrid({required this.children});
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (int i = 0; i < children.length; i += 2) {
+      rows.add(IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: children[i]),
+            const SizedBox(width: 8),
+            Expanded(
+              child: i + 1 < children.length ? children[i + 1] : const SizedBox(),
+            ),
+          ],
+        ),
+      ));
+      if (i + 2 < children.length) rows.add(const SizedBox(height: 8));
+    }
+    return Column(children: rows);
   }
 }
 
