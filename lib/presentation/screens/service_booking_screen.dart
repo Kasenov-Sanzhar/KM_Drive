@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import '../../l10n/app_localizations.dart';
 import '../widgets/common_widgets.dart';
 
 // ============================================================
 // KM DRIVE — Service Booking Screen
+// Полная локализация: ru / kk / en
 // ============================================================
 
 class ServiceBookingScreen extends StatefulWidget {
@@ -18,13 +20,6 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
   int _selectedDayIdx     = 0;
   int _selectedTimeIdx    = -1;
 
-  static const _serviceTypes = [
-    _ServiceType('🔧', 'Плановое ТО',  'Замена масла, фильтров, диагностика', 28000),
-    _ServiceType('🛞', 'Шиномонтаж',   'Замена / балансировка колёс',          15000),
-    _ServiceType('🛑', 'Тормоза',      'Проверка и замена колодок',             22000),
-    _ServiceType('🔋', 'Аккумулятор',  'Диагностика и замена АКБ',              8000),
-  ];
-
   static const _times = [
     '09:00', '10:30', '12:00', '14:00', '15:30', '17:00',
   ];
@@ -34,19 +29,35 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
   @override
   void initState() {
     super.initState();
+    _buildDays();
+  }
+
+  void _buildDays() {
     final now = DateTime.now();
-    const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     _days = List.generate(7, (i) {
       final d = now.add(Duration(days: i + 1));
-      return _DaySlot(weekdays[d.weekday - 1], d.day, d.month);
+      return _DaySlot(d.weekday, d.day, d.month);
     });
   }
 
-  void _book() {
+  List<_ServiceType> _serviceTypes(AppLocalizations l10n) => [
+    _ServiceType('🔧', l10n.get('svcOilName'),   l10n.get('svcOilDesc'),   28000),
+    _ServiceType('🛞', l10n.get('svcTireName'),  l10n.get('svcTireDesc'),  15000),
+    _ServiceType('🛑', l10n.get('svcBrakeName'), l10n.get('svcBrakeDesc'), 22000),
+    _ServiceType('🔋', l10n.get('svcBattName'),  l10n.get('svcBattDesc'),   8000),
+  ];
+
+  String _weekdayShort(AppLocalizations l10n, int weekday) {
+    const keys = ['wdMon','wdTue','wdWed','wdThu','wdFri','wdSat','wdSun'];
+    return l10n.get(keys[weekday - 1]);
+  }
+
+  void _book(AppLocalizations l10n, List<_ServiceType> services) {
     if (_selectedTimeIdx < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Выберите удобное время'),
+          content: Text(l10n.get('bookingSelectTime'),
+              style: KmTextStyles.bodySmall),
           backgroundColor: KmColors.surface2,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -58,9 +69,11 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
     showDialog(
       context: context,
       builder: (_) => _ConfirmDialog(
-        service: _serviceTypes[_selectedServiceIdx],
+        service: services[_selectedServiceIdx],
         day: _days[_selectedDayIdx],
+        weekdayLabel: _weekdayShort(l10n, _days[_selectedDayIdx].weekday),
         time: _times[_selectedTimeIdx],
+        l10n: l10n,
         onConfirm: () {
           Navigator.pop(context);
           Navigator.pop(context);
@@ -74,7 +87,9 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final svc = _serviceTypes[_selectedServiceIdx];
+    final l10n     = AppLocalizations.of(context);
+    final services = _serviceTypes(l10n);
+    final svc      = services[_selectedServiceIdx];
 
     return Scaffold(
       backgroundColor: KmColors.background,
@@ -83,8 +98,8 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
           children: [
             const SizedBox(height: 16),
             KmScreenHeader(
-              title: 'Запись на ТО',
-              subtitle: 'Выберите услугу и удобное время',
+              title:    l10n.get('bookingTitle'),
+              subtitle: l10n.get('bookingSubtitle'),
               showBack: true,
               onBack: () => Navigator.of(context).pop(),
             ),
@@ -95,17 +110,16 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
 
-                    // ── Тип услуги ──────────────────────────────
-                    const KmSectionLabel('ВИД РАБОТ'),
+                    // ── Тип услуги ────────────────────────────
+                    KmSectionLabel(l10n.get('bookingWorkType')),
                     const SizedBox(height: 4),
-                    ...List.generate(_serviceTypes.length, (i) {
-                      final s = _serviceTypes[i];
+                    ...List.generate(services.length, (i) {
+                      final s      = services[i];
                       final active = i == _selectedServiceIdx;
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 8),
                         child: GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedServiceIdx = i),
+                          onTap: () => setState(() => _selectedServiceIdx = i),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 180),
                             padding: const EdgeInsets.all(14),
@@ -113,12 +127,9 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                               color: active
                                   ? const Color(0xFF1E1F2C)
                                   : KmColors.surface2,
-                              borderRadius:
-                                  BorderRadius.circular(KmRadius.lg),
+                              borderRadius: BorderRadius.circular(KmRadius.lg),
                               border: Border.all(
-                                color: active
-                                    ? KmColors.accent
-                                    : KmColors.border,
+                                color: active ? KmColors.accent : KmColors.border,
                                 width: active ? 1 : 0.5,
                               ),
                             ),
@@ -128,8 +139,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                               const SizedBox(width: 14),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(s.name,
                                         style: KmTextStyles.bodyMedium),
@@ -142,8 +152,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                               Text(
                                 '${s.priceKzt ~/ 1000} 000 ₸',
                                 style: KmTextStyles.labelSmall.copyWith(
-                                  color: KmColors.accent,
-                                ),
+                                    color: KmColors.accent),
                               ),
                             ]),
                           ),
@@ -153,8 +162,8 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
 
                     const SizedBox(height: 20),
 
-                    // ── Дата ────────────────────────────────────
-                    const KmSectionLabel('ДАТА'),
+                    // ── Дата ──────────────────────────────────
+                    KmSectionLabel(l10n.get('bookingDateLabel')),
                     const SizedBox(height: 8),
                     SizedBox(
                       height: 70,
@@ -164,7 +173,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                         separatorBuilder: (_, __) =>
                             const SizedBox(width: 8),
                         itemBuilder: (_, i) {
-                          final d = _days[i];
+                          final d      = _days[i];
                           final active = i == _selectedDayIdx;
                           return GestureDetector(
                             onTap: () => setState(() {
@@ -188,14 +197,13 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                                 ),
                               ),
                               child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.center,
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(
-                                    d.weekday,
+                                    _weekdayShort(l10n, d.weekday),
                                     style: TextStyle(
                                       fontFamily: 'DMSans',
-                                      fontSize: 10,
+                                      fontSize: 11,
                                       letterSpacing: 0.5,
                                       fontWeight: FontWeight.w500,
                                       color: active
@@ -225,8 +233,8 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
 
                     const SizedBox(height: 20),
 
-                    // ── Время ───────────────────────────────────
-                    const KmSectionLabel('ВРЕМЯ'),
+                    // ── Время ─────────────────────────────────
+                    KmSectionLabel(l10n.get('bookingTimeLabel')),
                     const SizedBox(height: 8),
                     GridView.count(
                       crossAxisCount: 3,
@@ -260,7 +268,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                               _times[i],
                               style: TextStyle(
                                 fontFamily: 'DMSans',
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: active
                                     ? KmColors.accent
@@ -274,7 +282,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
 
                     const SizedBox(height: 28),
 
-                    // ── Итог ────────────────────────────────────
+                    // ── Итог ──────────────────────────────────
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -288,7 +296,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Выбрано',
+                              Text(l10n.get('bookingSelected'),
                                   style: KmTextStyles.caption),
                               const SizedBox(height: 4),
                               Text(svc.name,
@@ -297,7 +305,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                               Text(
                                 _selectedTimeIdx >= 0
                                     ? '${_monthDay(_days[_selectedDayIdx])} · ${_times[_selectedTimeIdx]}'
-                                    : 'Время не выбрано',
+                                    : l10n.get('bookingTimeNone'),
                                 style: KmTextStyles.caption.copyWith(
                                   color: _selectedTimeIdx >= 0
                                       ? KmColors.accent
@@ -321,21 +329,22 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _book,
+                        onPressed: () => _book(l10n, services),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: KmColors.accent,
                           foregroundColor: KmColors.background,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius:
                                 BorderRadius.circular(KmRadius.md),
                           ),
                         ),
-                        child: const Text(
-                          'ЗАПИСАТЬСЯ',
-                          style: TextStyle(
+                        child: Text(
+                          l10n.get('bookingBookBtn'),
+                          style: const TextStyle(
                             fontFamily: 'DMSans',
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1.5,
                           ),
@@ -353,19 +362,23 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
   }
 }
 
-// ── Диалог подтверждения ─────────────────────────────────────
+// ── Диалог подтверждения ──────────────────────────────────────
 
 class _ConfirmDialog extends StatelessWidget {
   const _ConfirmDialog({
     required this.service,
     required this.day,
+    required this.weekdayLabel,
     required this.time,
+    required this.l10n,
     required this.onConfirm,
   });
 
   final _ServiceType service;
   final _DaySlot day;
+  final String weekdayLabel;
   final String time;
+  final AppLocalizations l10n;
   final VoidCallback onConfirm;
 
   @override
@@ -379,9 +392,10 @@ class _ConfirmDialog extends StatelessWidget {
         side: const BorderSide(color: KmColors.border, width: 0.5),
       ),
       title: Column(children: [
-        Text(service.icon, style: const TextStyle(fontSize: 32)),
+        Text(service.icon,
+            style: const TextStyle(fontSize: 32)),
         const SizedBox(height: 8),
-        const Text('Подтвердить запись',
+        Text(l10n.get('bookingConfirmTitle'),
             style: KmTextStyles.displaySmall,
             textAlign: TextAlign.center),
       ]),
@@ -393,28 +407,30 @@ class _ConfirmDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена',
-              style: TextStyle(
-                  color: KmColors.textMuted, fontFamily: 'DMSans')),
+          child: Text(l10n.get('bookingCancelBtn'),
+              style: const TextStyle(
+                  color: KmColors.textMuted,
+                  fontFamily: 'DMSans',
+                  fontSize: 14)),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
               backgroundColor: KmColors.accent,
               foregroundColor: KmColors.background),
           onPressed: onConfirm,
-          child: const Text('Записать',
-              style: TextStyle(fontFamily: 'DMSans')),
+          child: Text(l10n.get('bookingConfirmBtn'),
+              style: const TextStyle(
+                  fontFamily: 'DMSans', fontSize: 14)),
         ),
       ],
     );
   }
 }
 
-// ── Модели ───────────────────────────────────────────────────
+// ── Модели ────────────────────────────────────────────────────
 
 class _ServiceType {
-  const _ServiceType(
-      this.icon, this.name, this.description, this.priceKzt);
+  const _ServiceType(this.icon, this.name, this.description, this.priceKzt);
   final String icon;
   final String name;
   final String description;
@@ -423,7 +439,7 @@ class _ServiceType {
 
 class _DaySlot {
   const _DaySlot(this.weekday, this.day, this.month);
-  final String weekday;
+  final int weekday; // 1=Mon … 7=Sun
   final int day;
   final int month;
 }

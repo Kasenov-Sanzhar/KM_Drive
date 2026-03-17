@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
+import 'data/services/notification_service.dart';
 
 import 'core/locale/locale_scope.dart';
 import 'core/theme/app_theme.dart';
@@ -19,6 +23,18 @@ const _localeKey = 'app_locale';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Firebase инициализация ────────────────────────────────
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Firebase background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseBackgroundHandler);
+
+  // Init notification service
+  await NotificationService.instance.init();
+  await NotificationService.instance.seedDemoIfEmpty();
 
   await initializeDateFormatting('ru_RU', null);
   await initializeDateFormatting('kk_KZ', null);
@@ -46,7 +62,11 @@ void main() async {
     final code = prefs.getString(_localeKey);
     if (code != null) {
       savedLocale = Locale(code);
-      final dateLocale = code == 'ru' ? 'ru_RU' : code == 'kk' ? 'kk_KZ' : 'en_US';
+      final dateLocale = code == 'ru'
+          ? 'ru_RU'
+          : code == 'kk'
+              ? 'kk_KZ'
+              : 'en_US';
       await DateFormatter.initialize(dateLocale);
     }
   } catch (_) {}

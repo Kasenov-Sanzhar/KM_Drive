@@ -41,7 +41,7 @@ class VehicleModel {
     id: 'km-jaqin-001',
     name: 'KM Jaqin',
     model: 'KM Jaqin 2.0T Premium',
-    segment: 'Премиальный кроссовер',
+    segment: 'segmentSUV',
     year: 2024,
     plateNumber: 'A523KM',
     vin: 'KMXJQ200L2400523',
@@ -58,11 +58,21 @@ class VehicleModel {
 enum VehicleSystemStatus { ok, warning, critical }
 
 extension VehicleSystemStatusExt on VehicleSystemStatus {
+  /// L10n-ключ для перевода статуса
+  String get l10nKey {
+    switch (this) {
+      case VehicleSystemStatus.ok:       return 'statusSystemOk';
+      case VehicleSystemStatus.warning:  return 'statusSystemWarning';
+      case VehicleSystemStatus.critical: return 'statusSystemCritical';
+    }
+  }
+
+  /// Fallback label (английский) — используется там где нет BuildContext
   String get label {
     switch (this) {
       case VehicleSystemStatus.ok:       return 'OK';
-      case VehicleSystemStatus.warning:  return 'Внимание';
-      case VehicleSystemStatus.critical: return 'Критично';
+      case VehicleSystemStatus.warning:  return 'Warning';
+      case VehicleSystemStatus.critical: return 'Critical';
     }
   }
 
@@ -89,14 +99,15 @@ class DiagnosticSystem {
   final VehicleSystemStatus status;
   final String? note;
 
+  // Имена систем хранятся как l10n-ключи, экраны делают l10n.get(system.name)
   static List<DiagnosticSystem> get samples => [
-    const DiagnosticSystem(id: 'engine',   name: 'Двигатель',          icon: '⚙️',  healthPercent: 94, status: VehicleSystemStatus.ok),
-    const DiagnosticSystem(id: 'battery',  name: 'Аккумулятор',        icon: '🔋',  healthPercent: 88, status: VehicleSystemStatus.ok),
-    const DiagnosticSystem(id: 'brakes',   name: 'Тормозная система',  icon: '🛑',  healthPercent: 64, status: VehicleSystemStatus.warning, note: 'Рекомендована проверка колодок'),
-    const DiagnosticSystem(id: 'cooling',  name: 'Система охлаждения', icon: '❄️',  healthPercent: 91, status: VehicleSystemStatus.ok),
-    const DiagnosticSystem(id: 'suspension',name:'Подвеска',           icon: '💨',  healthPercent: 79, status: VehicleSystemStatus.ok),
-    const DiagnosticSystem(id: 'oil',      name: 'Моторное масло',     icon: '🌡️', healthPercent: 55, status: VehicleSystemStatus.warning, note: 'Замена через 1 200 км'),
-    const DiagnosticSystem(id: 'electro',  name: 'Электроника',        icon: '📡',  healthPercent: 96, status: VehicleSystemStatus.ok),
+    const DiagnosticSystem(id: 'engine',     name: 'diagEngine',     icon: '⚙️',  healthPercent: 94, status: VehicleSystemStatus.ok),
+    const DiagnosticSystem(id: 'battery',    name: 'diagBattery',    icon: '🔋',  healthPercent: 88, status: VehicleSystemStatus.ok),
+    const DiagnosticSystem(id: 'brakes',     name: 'diagBrakes',     icon: '🛑',  healthPercent: 64, status: VehicleSystemStatus.warning, note: 'diagNoteBrakes'),
+    const DiagnosticSystem(id: 'cooling',    name: 'diagCooling',    icon: '❄️',  healthPercent: 91, status: VehicleSystemStatus.ok),
+    const DiagnosticSystem(id: 'suspension', name: 'diagSuspension', icon: '💨',  healthPercent: 79, status: VehicleSystemStatus.ok),
+    const DiagnosticSystem(id: 'oil',        name: 'diagOil',        icon: '🌡️', healthPercent: 55, status: VehicleSystemStatus.warning, note: 'diagNoteOil'),
+    const DiagnosticSystem(id: 'electro',    name: 'diagElectro',    icon: '📡',  healthPercent: 96, status: VehicleSystemStatus.ok),
   ];
 }
 
@@ -122,10 +133,11 @@ class ServiceRecord {
   final String? description;
   final int? priceKzt;
 
+  // title и description — l10n-ключи
   static List<ServiceRecord> get samples => [
     ServiceRecord(
       id: 'sr-001',
-      title: 'Замена масла и фильтра',
+      title: 'srOilChange',
       icon: '🛢️',
       date: DateTime(2024, 9, 12),
       mileageKm: 2647,
@@ -134,7 +146,7 @@ class ServiceRecord {
     ),
     ServiceRecord(
       id: 'sr-002',
-      title: 'Шиномонтаж (зима)',
+      title: 'srTires',
       icon: '🛞',
       date: DateTime(2024, 10, 28),
       mileageKm: 3102,
@@ -143,7 +155,7 @@ class ServiceRecord {
     ),
     ServiceRecord(
       id: 'sr-003',
-      title: 'Диагностика АКБ',
+      title: 'srBattery',
       icon: '🔋',
       date: DateTime(2024, 10, 28),
       mileageKm: 3102,
@@ -152,7 +164,7 @@ class ServiceRecord {
     ),
     ServiceRecord(
       id: 'sr-004',
-      title: 'ТО-2 (20 000 км)',
+      title: 'srService2',
       icon: '⚙️',
       date: DateTime(2025, 3, 15),
       mileageKm: 5000,
@@ -160,12 +172,12 @@ class ServiceRecord {
     ),
     ServiceRecord(
       id: 'sr-005',
-      title: 'Замена тормозных колодок',
+      title: 'srBrakePads',
       icon: '🛑',
       date: DateTime(2025, 3, 15),
       mileageKm: 5000,
       status: ServiceStatus.recommended,
-      description: 'Износ 36% — рекомендуется при следующем ТО',
+      description: 'srBrakePadsNote',
     ),
   ];
 }
@@ -174,11 +186,21 @@ class ServiceRecord {
 enum ServiceStatus { done, scheduled, recommended }
 
 extension ServiceStatusExt on ServiceStatus {
+  /// L10n-ключ
+  String get l10nKey {
+    switch (this) {
+      case ServiceStatus.done:        return 'statusDone';
+      case ServiceStatus.scheduled:   return 'statusScheduled';
+      case ServiceStatus.recommended: return 'statusRecommended';
+    }
+  }
+
+  /// Fallback (английский)
   String get label {
     switch (this) {
-      case ServiceStatus.done:        return 'Выполнено';
-      case ServiceStatus.scheduled:   return 'Запланировать';
-      case ServiceStatus.recommended: return 'Рекомендуется';
+      case ServiceStatus.done:        return 'Done';
+      case ServiceStatus.scheduled:   return 'Schedule';
+      case ServiceStatus.recommended: return 'Recommended';
     }
   }
 }
@@ -243,7 +265,7 @@ class TripRecord {
   static List<TripRecord> get samples => [
     // Работа (пр. Достык) → Дом (мкр. Алатау)
     TripRecord(
-      id: 'tr-001', from: 'Работа', to: 'Дом',
+      id: 'tr-001', from: 'tripWork', to: 'tripHome',
       date: DateTime.now(),
       distanceKm: 34.2, durationMin: 41, fuelConsumption: 7.8, ecoScore: 91,
       routePoints: const [
@@ -261,7 +283,7 @@ class TripRecord {
     ),
     // Дом → Мега Алматы (пр. Розыбакиева)
     TripRecord(
-      id: 'tr-002', from: 'Дом', to: 'Торговый центр',
+      id: 'tr-002', from: 'tripHome', to: 'tripMall',
       date: DateTime.now().subtract(const Duration(days: 1)),
       distanceKm: 12.7, durationMin: 19, fuelConsumption: 8.1, ecoScore: 85,
       routePoints: const [
@@ -275,7 +297,7 @@ class TripRecord {
     ),
     // Дом → Медеу (Алматы горы)
     TripRecord(
-      id: 'tr-003', from: 'Дом', to: 'Медеу',
+      id: 'tr-003', from: 'tripHome', to: 'tripMedeu',
       date: DateTime.now().subtract(const Duration(days: 2)),
       distanceKm: 22.5, durationMin: 35, fuelConsumption: 9.2, ecoScore: 78,
       routePoints: const [
@@ -351,34 +373,34 @@ class SubscriptionModel {
   static List<SubscriptionModel> get samples => [
     SubscriptionModel(
       id: 'km-connect-pro',
-      name: 'KM Connect Pro',
+      name: 'subName1',
       priceKzt: 4900,
-      features: ['Удалённый запуск', 'Климат-контроль', 'Геозоны', 'Приоритетная поддержка'],
+      features: ['subFeat1_1', 'subFeat1_2', 'subFeat1_3', 'subFeat1_4'],
       isActive: true,
       activeUntil: DateTime(2025, 4, 12),
       icon: '🔗',
     ),
     const SubscriptionModel(
       id: 'telemetry-pro',
-      name: 'Расширенная телематика',
+      name: 'subName2',
       priceKzt: 2490,
-      features: ['Детальная статистика поездок', 'Оценка стиля вождения', 'Ежемесячные отчёты'],
+      features: ['subFeat2_1', 'subFeat2_2', 'subFeat2_3'],
       isActive: false,
       icon: '📡',
     ),
     const SubscriptionModel(
       id: 'parking-plus',
-      name: 'Ассистент парковки+',
+      name: 'subName3',
       priceKzt: 1490,
-      features: ['Поиск парковок', 'Оплата через приложение', 'Навигация к автомобилю'],
+      features: ['subFeat3_1', 'subFeat3_2', 'subFeat3_3'],
       isActive: false,
       icon: '🅿️',
     ),
     SubscriptionModel(
       id: 'ota-priority',
-      name: 'OTA Приоритет',
+      name: 'subName4',
       priceKzt: 990,
-      features: ['Первый доступ к обновлениям ПО', 'Ночные обновления без помех'],
+      features: ['subFeat4_1', 'subFeat4_2'],
       isActive: true,
       activeUntil: DateTime(2025, 12, 31),
       icon: '⬆️',
@@ -405,25 +427,50 @@ class AppNotification {
   static List<AppNotification> get samples => [
     AppNotification(
       id: 'n-001',
-      title: 'ТО через 1 200 км. Запишитесь в сервисный центр.',
+      title: 'notif1',
       type: NotificationType.warning,
       time: DateTime.now().subtract(const Duration(hours: 2)),
     ),
     AppNotification(
       id: 'n-002',
-      title: 'Обновление ПО v3.2.1 установлено успешно. Платформа KG-6.',
+      title: 'notif2',
       type: NotificationType.success,
       time: DateTime.now().subtract(const Duration(days: 1)),
       isRead: true,
     ),
     AppNotification(
       id: 'n-003',
-      title: 'Подписка KM Connect Pro активна до 12 апреля 2025.',
+      title: 'notif3',
       type: NotificationType.info,
       time: DateTime.now().subtract(const Duration(days: 3)),
       isRead: true,
     ),
   ];
+
+  // ── Сериализация ─────────────────────────────────────────
+
+  AppNotification copyWithRead(bool read) => AppNotification(
+    id: id, title: title, type: type, time: time, isRead: read,
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id':     id,
+    'title':  title,
+    'type':   type.name,
+    'time':   time.millisecondsSinceEpoch,
+    'isRead': isRead,
+  };
+
+  static AppNotification fromJson(Map<String, dynamic> j) => AppNotification(
+    id:     j['id']    as String,
+    title:  j['title'] as String,
+    type:   NotificationType.values.firstWhere(
+      (e) => e.name == j['type'],
+      orElse: () => NotificationType.info,
+    ),
+    time:   DateTime.fromMillisecondsSinceEpoch(j['time'] as int),
+    isRead: (j['isRead'] as bool?) ?? false,
+  );
 }
 
 enum NotificationType { info, warning, success, error }

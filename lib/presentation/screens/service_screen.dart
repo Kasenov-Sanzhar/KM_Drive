@@ -216,11 +216,11 @@ class _ServiceRecordItem extends StatelessWidget {
   _BadgeStyle _badgeStyle(AppLocalizations l10n) {
     switch (record.status) {
       case ServiceStatus.done:
-        return _BadgeStyle(KmColors.success, KmColors.overlaySuccess, l10n.get('statusDone'));
+        return _BadgeStyle(KmColors.success, KmColors.overlaySuccess, l10n.get(record.status.l10nKey));
       case ServiceStatus.scheduled:
-        return _BadgeStyle(KmColors.warning, KmColors.overlayAccent, l10n.get('statusScheduled'));
+        return _BadgeStyle(KmColors.warning, KmColors.overlayAccent, l10n.get(record.status.l10nKey));
       case ServiceStatus.recommended:
-        return _BadgeStyle(KmColors.warning, KmColors.overlayAccent, l10n.get('statusRecommended'));
+        return _BadgeStyle(KmColors.warning, KmColors.overlayAccent, l10n.get(record.status.l10nKey));
     }
   }
 
@@ -263,12 +263,12 @@ class _ServiceRecordItem extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(record.title, style: KmTextStyles.bodyMedium),
+                        Text(l10n.get(record.title), style: KmTextStyles.bodyMedium),
                         const SizedBox(height: 3),
                         Text(
                           record.status == ServiceStatus.done
                               ? '${KmFormatters.dateShort(record.date)} · ${KmFormatters.kilometers(record.mileageKm)}'
-                              : record.description ?? KmFormatters.date(record.date),
+                              : (record.description != null ? l10n.get(record.description!) : KmFormatters.date(record.date)),
                           style: KmTextStyles.caption,
                         ),
                         if (record.priceKzt != null) ...[
@@ -314,7 +314,7 @@ class _ServiceRecordItem extends StatelessWidget {
                 if (record.description != null &&
                     record.status != ServiceStatus.done) ...[
                   const SizedBox(height: 8),
-                  _DetailRow('', record.description!, multiline: true),
+                  _DetailRow('', l10n.get(record.description!), multiline: true),
                 ],
                 // No detailed "worksDone" list in the model; use description if present.
 

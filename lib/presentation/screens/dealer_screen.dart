@@ -6,89 +6,68 @@ import '../widgets/common_widgets.dart';
 
 // ============================================================
 // KM DRIVE — Dealer Screen
-// Официальный дилерский центр KM Motors Алматы
+// Полная локализация: ru / kk / en
 // ============================================================
 
 class DealerScreen extends StatelessWidget {
   const DealerScreen({super.key});
 
-  // ── Данные дилера ─────────────────────────────────────────
-
-  static const _phone      = '+7 (727) 123-45-67';
-  static const _whatsApp   = '+77271234567';
-  static const _address    = 'Алматы, ул. Розыбакиева, 247';
-  static const _addressEn  = 'Almaty, Rozybakiev St, 247';
-  static const _mapsUrl    = 'geo:43.2220,76.9080?q=KM+Motors+Almaty';
-
-  static const _hours = [
-    ('Пн – Пт', '09:00 – 19:00'),
-    ('Суббота',  '09:00 – 18:00'),
-    ('Воскресенье', 'Выходной'),
-  ];
-
-  static const _services = [
-    ('🔧', 'Техническое обслуживание',     'ТО-1, ТО-2, межсезонное ТО'),
-    ('🛠️', 'Гарантийный ремонт',           'Все виды гарантийных работ'),
-    ('🛞', 'Шинный центр',                  'Замена, балансировка, хранение'),
-    ('🔋', 'Диагностика и электрика',        'OBD, ECU, ремонт электрики'),
-    ('🚗', 'Кузовной ремонт',               'Рихтовка, покраска, полировка'),
-    ('📦', 'Оригинальные запчасти',          'Склад KM Motors и под заказ'),
-  ];
-
-  static const _offers = [
-    _DealerOffer(
-      '🎁',
-      'ТО при покупке',
-      'Первое ТО бесплатно при покупке нового KM',
-      KmColors.accent,
-      Color(0x18C8A96E),
-    ),
-    _DealerOffer(
-      '⭐',
-      'Программа лояльности',
-      'Накапливайте баллы KM Points за каждый визит',
-      KmColors.info,
-      Color(0x185A8FE0),
-    ),
-    _DealerOffer(
-      '📅',
-      'Онлайн-запись',
-      'Скидка 5% при записи через KM Drive',
-      KmColors.success,
-      Color(0x1859C172),
-    ),
-  ];
-
-  // Удалено неиспользуемое поле _manager
+  static const _phone    = '+7 (727) 123-45-67';
+  static const _whatsApp = '+77271234567';
+  static const _mapsUrl  = 'geo:43.2220,76.9080?q=KM+Motors+Almaty';
+  static const _managerPhone = '+7 (707) 987-65-43';
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+
+    // Все данные берём из l10n
+    final hours = [
+      (l10n.get('dealerHrMF'),  l10n.get('dealerHrMFVal')),
+      (l10n.get('dealerHrSat'), l10n.get('dealerHrSatVal')),
+      (l10n.get('dealerHrSun'), l10n.get('dealerHrSunVal')),
+    ];
+
+    final services = [
+      ('🔧', l10n.get('dSvc1Name'), l10n.get('dSvc1Desc')),
+      ('🛠️', l10n.get('dSvc2Name'), l10n.get('dSvc2Desc')),
+      ('🛞', l10n.get('dSvc3Name'), l10n.get('dSvc3Desc')),
+      ('🔋', l10n.get('dSvc4Name'), l10n.get('dSvc4Desc')),
+      ('🚗', l10n.get('dSvc5Name'), l10n.get('dSvc5Desc')),
+      ('📦', l10n.get('dSvc6Name'), l10n.get('dSvc6Desc')),
+    ];
+
+    final offers = [
+      _Offer('🎁', l10n.get('dOffer1Title'), l10n.get('dOffer1Desc'),
+          KmColors.accent, const Color(0x18C8A96E)),
+      _Offer('⭐', l10n.get('dOffer2Title'), l10n.get('dOffer2Desc'),
+          KmColors.info, const Color(0x185A8FE0)),
+      _Offer('📅', l10n.get('dOffer3Title'), l10n.get('dOffer3Desc'),
+          KmColors.success, const Color(0x1859C172)),
+    ];
 
     return Scaffold(
       backgroundColor: KmColors.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Шапка ────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(top: 16),
                 child: KmScreenHeader(
-                  title: l10n.get('dealerTitle'),
+                  title:    l10n.get('dealerTitle'),
                   subtitle: l10n.get('dealerSubtitle'),
                   showBack: true,
                 ),
               ),
             ),
 
-            // ── Карта-заглушка + лого ─────────────────────────
+            // Карта-заглушка
             SliverToBoxAdapter(
-              child: _DealerMapBanner(address: l10n.get('dealerAddress') == 'Address'
-                  ? _addressEn : _address),
+              child: _MapBanner(address: l10n.get('dealerAddressVal')),
             ),
 
-            // ── Контактные кнопки ─────────────────────────────
+            // Кнопки связи
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               sliver: SliverToBoxAdapter(
@@ -96,15 +75,15 @@ class DealerScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Адрес и режим работы ──────────────────────────
+            // Адрес / телефон / часы
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               sliver: SliverToBoxAdapter(
-                child: _InfoCard(l10n: l10n),
+                child: _InfoCard(l10n: l10n, hours: hours),
               ),
             ),
 
-            // ── Персональный менеджер ─────────────────────────
+            // Персональный менеджер
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               sliver: SliverToBoxAdapter(
@@ -112,7 +91,7 @@ class DealerScreen extends StatelessWidget {
               ),
             ),
 
-            // ── Услуги ───────────────────────────────────────
+            // Услуги
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               sliver: SliverToBoxAdapter(
@@ -120,13 +99,13 @@ class DealerScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     KmSectionLabel(l10n.get('dealerServices')),
-                    const _ServicesGrid(),
+                    _ServicesGrid(services: services),
                   ],
                 ),
               ),
             ),
 
-            // ── Спецпредложения ──────────────────────────────
+            // Спецпредложения
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
               sliver: SliverToBoxAdapter(
@@ -134,7 +113,7 @@ class DealerScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     KmSectionLabel(l10n.get('dealerOffers')),
-                    ..._offers.map((o) => Padding(
+                    ...offers.map((o) => Padding(
                           padding: const EdgeInsets.only(bottom: 10),
                           child: _OfferCard(offer: o),
                         )),
@@ -149,10 +128,10 @@ class DealerScreen extends StatelessWidget {
   }
 }
 
-// ── Баннер карты ─────────────────────────────────────────────
+// ── Карта-заглушка ────────────────────────────────────────────
 
-class _DealerMapBanner extends StatelessWidget {
-  const _DealerMapBanner({required this.address});
+class _MapBanner extends StatelessWidget {
+  const _MapBanner({required this.address});
   final String address;
 
   @override
@@ -167,16 +146,13 @@ class _DealerMapBanner extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Сетка
           ClipRRect(
             borderRadius: BorderRadius.circular(KmRadius.lg),
             child: const CustomPaint(
               size: Size(double.infinity, 180),
-              painter: _DealerMapPainter(),
+              painter: _MapPainter(),
             ),
           ),
-
-          // Затемнение снизу
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(KmRadius.lg),
@@ -188,40 +164,29 @@ class _DealerMapBanner extends StatelessWidget {
               ),
             ),
           ),
-
-          // Маркер
           const Center(
             child: SizedBox(
-              width: 44, 
-              height: 44,
+              width: 44, height: 44,
               child: Center(
-                child: Text(
-                  'KM',
-                  style: TextStyle(
-                    fontFamily: 'CormorantGaramond',
-                    fontSize: 14, 
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF08080A), 
-                    letterSpacing: 2
-                  ),
-                ),
+                child: Text('KM',
+                    style: TextStyle(
+                        fontFamily: 'CormorantGaramond',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF08080A),
+                        letterSpacing: 2)),
               ),
             ),
           ),
-
-          // Адрес снизу
           Positioned(
             bottom: 12, left: 14, right: 14,
             child: Row(children: [
               const Icon(Icons.location_on, color: KmColors.accent, size: 14),
               const SizedBox(width: 6),
               Expanded(
-                child: Text(
-                  address,
-                  style: KmTextStyles.caption.copyWith(
-                    color: KmColors.textSecondary
-                  ),
-                ),
+                child: Text(address,
+                    style: KmTextStyles.caption
+                        .copyWith(color: KmColors.textSecondary)),
               ),
             ]),
           ),
@@ -231,36 +196,32 @@ class _DealerMapBanner extends StatelessWidget {
   }
 }
 
-class _DealerMapPainter extends CustomPainter {
-  const _DealerMapPainter();
-
+class _MapPainter extends CustomPainter {
+  const _MapPainter();
   @override
   void paint(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..color = const Color(0x0AC8A96E)..strokeWidth = 0.5;
+    final g = Paint()..color = const Color(0x0AC8A96E)..strokeWidth = 0.5;
     for (double y = 0; y < size.height; y += 24) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), g);
     }
     for (double x = 0; x < size.width; x += 24) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), g);
     }
-    // Дороги
-    final road = Paint()
+    final r1 = Paint()
       ..color = const Color(0x14FFFFFF)..strokeWidth = 10..strokeCap = StrokeCap.round;
-    final road2 = Paint()
+    final r2 = Paint()
       ..color = const Color(0x0AFFFFFF)..strokeWidth = 6..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(0, size.height * 0.5),
-        Offset(size.width, size.height * 0.5), road);
+        Offset(size.width, size.height * 0.5), r1);
     canvas.drawLine(Offset(size.width * 0.4, 0),
-        Offset(size.width * 0.4, size.height), road);
+        Offset(size.width * 0.4, size.height), r1);
     canvas.drawLine(Offset(0, size.height * 0.25),
-        Offset(size.width, size.height * 0.25), road2);
+        Offset(size.width, size.height * 0.25), r2);
     canvas.drawLine(Offset(size.width * 0.7, 0),
-        Offset(size.width * 0.7, size.height), road2);
+        Offset(size.width * 0.7, size.height), r2);
   }
-
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
 // ── Кнопки связи ─────────────────────────────────────────────
@@ -269,91 +230,63 @@ class _ContactButtons extends StatelessWidget {
   const _ContactButtons({required this.l10n});
   final AppLocalizations l10n;
 
-  void _copyPhone(BuildContext context) {
-    Clipboard.setData(const ClipboardData(text: DealerScreen._phone));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          '${DealerScreen._phone} скопирован',
-          style: KmTextStyles.caption,
-        ),
-        backgroundColor: KmColors.surface2,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12))
-        ),
-        duration: Duration(seconds: 2),
-      ),
-    );
+  void _snack(BuildContext ctx, String text) {
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      content: Text(text, style: KmTextStyles.bodySmall),
+      backgroundColor: KmColors.surface2,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 2),
+    ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Row(children: [
-      // Позвонить
       Expanded(
-        child: _ContactBtn(
+        child: _CBtn(
           icon: Icons.phone_rounded,
           label: l10n.get('dealerCall'),
           color: KmColors.accent,
           bg: const Color(0x1AC8A96E),
           border: const Color(0x40C8A96E),
-          onTap: () => _copyPhone(context),
+          onTap: () {
+            Clipboard.setData(
+                const ClipboardData(text: DealerScreen._phone));
+            _snack(context,
+                '${DealerScreen._phone} ${l10n.get('phoneCopied')}');
+          },
         ),
       ),
       const SizedBox(width: 10),
-      // WhatsApp
       Expanded(
-        child: _ContactBtn(
+        child: _CBtn(
           icon: Icons.chat_bubble_rounded,
           label: l10n.get('dealerWhatsApp'),
           color: KmColors.success,
           bg: const Color(0x1A59C172),
           border: const Color(0x4059C172),
           onTap: () {
-            Clipboard.setData(const ClipboardData(text: DealerScreen._whatsApp));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  '${DealerScreen._whatsApp} скопирован',
-                  style: KmTextStyles.caption,
-                ),
-                backgroundColor: KmColors.surface2,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12))
-                ),
-                duration: Duration(seconds: 2),
-              ),
-            );
+            Clipboard.setData(
+                const ClipboardData(text: DealerScreen._whatsApp));
+            _snack(context,
+                '${DealerScreen._whatsApp} ${l10n.get('phoneCopied')}');
           },
         ),
       ),
       const SizedBox(width: 10),
-      // Маршрут
       Expanded(
-        child: _ContactBtn(
+        child: _CBtn(
           icon: Icons.directions_rounded,
           label: l10n.get('dealerRoute'),
           color: KmColors.info,
           bg: const Color(0x1A5A8FE0),
           border: const Color(0x405A8FE0),
           onTap: () {
-            Clipboard.setData(const ClipboardData(text: DealerScreen._mapsUrl));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Ссылка на карте скопирована', 
-                  style: KmTextStyles.caption
-                ),
-                backgroundColor: KmColors.surface2,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12))
-                ),
-                duration: Duration(seconds: 2),
-              ),
-            );
+            Clipboard.setData(
+                const ClipboardData(text: DealerScreen._mapsUrl));
+            _snack(context, l10n.get('mapLinkCopied'));
           },
         ),
       ),
@@ -361,8 +294,8 @@ class _ContactButtons extends StatelessWidget {
   }
 }
 
-class _ContactBtn extends StatelessWidget {
-  const _ContactBtn({
+class _CBtn extends StatelessWidget {
+  const _CBtn({
     required this.icon,
     required this.label,
     required this.color,
@@ -373,9 +306,7 @@ class _ContactBtn extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final Color color;
-  final Color bg;
-  final Color border;
+  final Color color, bg, border;
   final VoidCallback onTap;
 
   @override
@@ -394,16 +325,13 @@ class _ContactBtn extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'DMSans', 
-                fontSize: 10,
-                fontWeight: FontWeight.w500, 
-                color: color
-              ),
-              textAlign: TextAlign.center,
-            ),
+            Text(label,
+                style: TextStyle(
+                    fontFamily: 'DMSans',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: color),
+                textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -411,14 +339,18 @@ class _ContactBtn extends StatelessWidget {
   }
 }
 
-// ── Адрес и часы ─────────────────────────────────────────────
+// ── Адрес / телефон / часы ────────────────────────────────────
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.l10n});
+  const _InfoCard(
+      {required this.l10n,
+      required this.hours});
   final AppLocalizations l10n;
+  final List<(String, String)> hours;
 
   @override
   Widget build(BuildContext context) {
+    final closedVal = l10n.get('dealerHrSunVal');
     return KmAccentCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -432,20 +364,14 @@ class _InfoCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.get('dealerAddress'),
-                    style: KmTextStyles.labelSmall
-                  ),
+                  Text(l10n.get('dealerAddress'),
+                      style: KmTextStyles.labelSmall),
                   const SizedBox(height: 3),
-                  const Text(
-                    DealerScreen._address,
-                    style: KmTextStyles.bodyMedium
-                  ),
+                  Text(l10n.get('dealerAddressVal'),
+                      style: KmTextStyles.bodyMedium),
                   const SizedBox(height: 2),
-                  const Text(
-                    'м. Аль-Фараби, авт. 103, 125',
-                    style: KmTextStyles.caption
-                  ),
+                  Text(l10n.get('dealerTransport'),
+                      style: KmTextStyles.caption),
                 ],
               ),
             ),
@@ -457,21 +383,18 @@ class _InfoCard extends StatelessWidget {
 
           // Телефон
           Row(children: [
-            const Icon(Icons.phone_outlined, color: KmColors.accent, size: 18),
+            const Icon(Icons.phone_outlined,
+                color: KmColors.accent, size: 18),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.get('dealerPhone'), 
-                    style: KmTextStyles.labelSmall
-                  ),
+                  Text(l10n.get('dealerPhone'),
+                      style: KmTextStyles.labelSmall),
                   const SizedBox(height: 3),
-                  const Text(
-                    DealerScreen._phone, 
-                    style: KmTextStyles.bodyMedium
-                  ),
+                  Text(l10n.get('dealerPhoneVal'),
+                      style: KmTextStyles.bodyMedium),
                 ],
               ),
             ),
@@ -490,32 +413,28 @@ class _InfoCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.get('dealerHours'), 
-                    style: KmTextStyles.labelSmall
-                  ),
+                  Text(l10n.get('dealerHours'),
+                      style: KmTextStyles.labelSmall),
                   const SizedBox(height: 6),
-                  ...DealerScreen._hours.map((h) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(children: [
-                      SizedBox(
-                        width: 120,
-                        child: Text(
-                          h.$1, 
-                          style: KmTextStyles.caption
-                        ),
-                      ),
-                      Text(
-                        h.$2,
-                        style: KmTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w500,
-                          color: h.$2 == 'Выходной'
-                              ? KmColors.textMuted
-                              : KmColors.textPrimary,
-                        ),
-                      ),
-                    ]),
-                  )),
+                  ...hours.map((h) => Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(children: [
+                          SizedBox(
+                            width: 120,
+                            child: Text(h.$1,
+                                style: KmTextStyles.caption),
+                          ),
+                          Text(
+                            h.$2,
+                            style: KmTextStyles.bodySmall.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: h.$2 == closedVal
+                                  ? KmColors.textMuted
+                                  : KmColors.textPrimary,
+                            ),
+                          ),
+                        ]),
+                      )),
                 ],
               ),
             ),
@@ -532,6 +451,21 @@ class _ManagerCard extends StatelessWidget {
   const _ManagerCard({required this.l10n});
   final AppLocalizations l10n;
 
+  void _snack(BuildContext ctx) {
+    Clipboard.setData(
+        const ClipboardData(text: DealerScreen._managerPhone));
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      content: Text(
+          '${DealerScreen._managerPhone} ${l10n.get('phoneCopied')}',
+          style: KmTextStyles.bodySmall),
+      backgroundColor: KmColors.surface2,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12)),
+      duration: const Duration(seconds: 2),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -543,75 +477,45 @@ class _ManagerCard extends StatelessWidget {
       ),
       child: Row(children: [
         Container(
-          width: 52, 
-          height: 52,
+          width: 52, height: 52,
           decoration: BoxDecoration(
             color: const Color(0x18C8A96E),
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0x40C8A96E), width: 0.5),
+            border: Border.all(
+                color: const Color(0x40C8A96E), width: 0.5),
           ),
           child: const Center(
-            child: Text(
-              '👔', 
-              style: TextStyle(fontSize: 22)
-            ),
-          ),
+              child: Text('👔',
+                  style: TextStyle(fontSize: 22))),
         ),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.get('dealerManager'),
-                style: KmTextStyles.labelSmall.copyWith(
-                  color: KmColors.accent
-                ),
-              ),
+              Text(l10n.get('dealerManager'),
+                  style: KmTextStyles.labelSmall
+                      .copyWith(color: KmColors.accent)),
               const SizedBox(height: 3),
-              const Text(
-                'Алибек Сейтжанов', 
-                style: KmTextStyles.bodyMedium
-              ),
-              const Text(
-                'Персональный менеджер', 
-                style: KmTextStyles.caption
-              ),
+              Text(l10n.get('dealerManagerName'),
+                  style: KmTextStyles.bodyMedium),
+              Text(l10n.get('dealerManagerRole'),
+                  style: KmTextStyles.caption),
             ],
           ),
         ),
-        // Кнопка позвонить менеджеру
         GestureDetector(
-          onTap: () {
-            Clipboard.setData(const ClipboardData(text: '+7 (707) 987-65-43'));
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  '+7 (707) 987-65-43 скопирован',
-                  style: KmTextStyles.caption
-                ),
-                backgroundColor: KmColors.surface2,
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12))
-                ),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          },
+          onTap: () => _snack(context),
           child: Container(
-            width: 40, 
-            height: 40,
+            width: 40, height: 40,
             decoration: BoxDecoration(
               color: const Color(0x18C8A96E),
               borderRadius: BorderRadius.circular(KmRadius.sm),
-              border: Border.all(color: const Color(0x40C8A96E), width: 0.5),
+              border: Border.all(
+                  color: const Color(0x40C8A96E), width: 0.5),
             ),
-            child: const Icon(
-              Icons.phone_rounded,
-              color: KmColors.accent, 
-              size: 18
-            ),
+            child: const Icon(Icons.phone_rounded,
+                color: KmColors.accent, size: 18),
           ),
         ),
       ]),
@@ -619,10 +523,11 @@ class _ManagerCard extends StatelessWidget {
   }
 }
 
-// ── Услуги ───────────────────────────────────────────────────
+// ── Услуги ────────────────────────────────────────────────────
 
 class _ServicesGrid extends StatelessWidget {
-  const _ServicesGrid();
+  const _ServicesGrid({required this.services});
+  final List<(String, String, String)> services;
 
   @override
   Widget build(BuildContext context) {
@@ -633,7 +538,7 @@ class _ServicesGrid extends StatelessWidget {
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 1.8,
-      children: DealerScreen._services.map((s) {
+      children: services.map((s) {
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -649,19 +554,15 @@ class _ServicesGrid extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    s.$2, 
-                    style: KmTextStyles.labelSmall,
-                    maxLines: 1, 
-                    overflow: TextOverflow.ellipsis
-                  ),
+                  Text(s.$2,
+                      style: KmTextStyles.labelSmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 2),
-                  Text(
-                    s.$3, 
-                    style: KmTextStyles.caption,
-                    maxLines: 1, 
-                    overflow: TextOverflow.ellipsis
-                  ),
+                  Text(s.$3,
+                      style: KmTextStyles.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                 ],
               ),
             ],
@@ -672,11 +573,11 @@ class _ServicesGrid extends StatelessWidget {
   }
 }
 
-// ── Спецпредложения ──────────────────────────────────────────
+// ── Спецпредложения ───────────────────────────────────────────
 
 class _OfferCard extends StatelessWidget {
   const _OfferCard({required this.offer});
-  final _DealerOffer offer;
+  final _Offer offer;
 
   @override
   Widget build(BuildContext context) {
@@ -686,41 +587,30 @@ class _OfferCard extends StatelessWidget {
         color: offer.bg,
         borderRadius: BorderRadius.circular(KmRadius.lg),
         border: Border.all(
-          color: offer.color.withValues(alpha: 0.3),
-          width: 0.5,
-        ),
+            color: offer.color.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
-          width: 42, 
-          height: 42,
+          width: 42, height: 42,
           decoration: BoxDecoration(
             color: offer.color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(KmRadius.sm),
           ),
           child: Center(
-            child: Text(
-              offer.icon, 
-              style: const TextStyle(fontSize: 20)
-            ),
-          ),
+              child: Text(offer.icon,
+                  style: const TextStyle(fontSize: 20))),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                offer.title,
-                style: KmTextStyles.bodyMedium.copyWith(
-                  color: offer.color
-                ),
-              ),
+              Text(offer.title,
+                  style: KmTextStyles.bodyMedium
+                      .copyWith(color: offer.color)),
               const SizedBox(height: 3),
-              Text(
-                offer.description, 
-                style: KmTextStyles.bodySmall
-              ),
+              Text(offer.description,
+                  style: KmTextStyles.bodySmall),
             ],
           ),
         ),
@@ -729,18 +619,9 @@ class _OfferCard extends StatelessWidget {
   }
 }
 
-class _DealerOffer {
-  const _DealerOffer(
-    this.icon, 
-    this.title, 
-    this.description, 
-    this.color, 
-    this.bg
-  );
-  
-  final String icon;
-  final String title;
-  final String description;
-  final Color color;
-  final Color bg;
+class _Offer {
+  const _Offer(
+      this.icon, this.title, this.description, this.color, this.bg);
+  final String icon, title, description;
+  final Color color, bg;
 }

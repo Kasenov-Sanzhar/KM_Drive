@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 // ============================================================
 // KM DRIVE — Design System
 // Luxury Dark Theme | Kassenov Motors
+// Шрифты увеличены для читаемости
 // ============================================================
 
 abstract class KmColors {
@@ -30,7 +31,6 @@ abstract class KmColors {
   static const Color error   = Color(0xFFE05A5A);
   static const Color info    = Color(0xFF5A8FE0);
 
-  // Полупрозрачные — через Color.fromARGB чтобы избежать withOpacity
   static const Color overlayAccent  = Color(0x1AC8A96E);
   static const Color overlayError   = Color(0x1AE05A5A);
   static const Color overlaySuccess = Color(0x1A5AB87A);
@@ -51,9 +51,10 @@ abstract class KmColors {
 abstract class KmTextStyles {
   KmTextStyles._();
 
+  // Заголовки: было 36/28/22 → стало 42/34/26
   static const TextStyle displayLarge = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: FontWeight.w400,
     color: KmColors.textPrimary,
     letterSpacing: 0.5,
@@ -62,7 +63,7 @@ abstract class KmTextStyles {
 
   static const TextStyle displayMedium = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 28,
+    fontSize: 34,
     fontWeight: FontWeight.w400,
     color: KmColors.textPrimary,
     letterSpacing: 0.5,
@@ -70,14 +71,15 @@ abstract class KmTextStyles {
 
   static const TextStyle displaySmall = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: FontWeight.w500,
     color: KmColors.textPrimary,
   );
 
+  // Цифры: было 48/24/18 → стало 54/28/22
   static const TextStyle numeralLarge = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 48,
+    fontSize: 54,
     fontWeight: FontWeight.w300,
     color: KmColors.textPrimary,
     height: 1.0,
@@ -85,19 +87,28 @@ abstract class KmTextStyles {
 
   static const TextStyle numeralMedium = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: FontWeight.w400,
     color: KmColors.textPrimary,
   );
 
   static const TextStyle numeralSmall = TextStyle(
     fontFamily: 'CormorantGaramond',
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: FontWeight.w500,
     color: KmColors.textPrimary,
   );
 
+  // Основной текст: было 15/13/11 → стало 17/15/13
   static const TextStyle bodyLarge = TextStyle(
+    fontFamily: 'DMSans',
+    fontSize: 17,
+    fontWeight: FontWeight.w400,
+    color: KmColors.textPrimary,
+    height: 1.55,
+  );
+
+  static const TextStyle bodyMedium = TextStyle(
     fontFamily: 'DMSans',
     fontSize: 15,
     fontWeight: FontWeight.w400,
@@ -105,25 +116,18 @@ abstract class KmTextStyles {
     height: 1.5,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
-    fontFamily: 'DMSans',
-    fontSize: 13,
-    fontWeight: FontWeight.w400,
-    color: KmColors.textPrimary,
-    height: 1.5,
-  );
-
   static const TextStyle bodySmall = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: FontWeight.w400,
     color: KmColors.textSecondary,
     height: 1.5,
   );
 
+  // Метки: было 12/10/9 → стало 14/12/11
   static const TextStyle labelLarge = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: FontWeight.w500,
     color: KmColors.textPrimary,
     letterSpacing: 0.5,
@@ -131,26 +135,28 @@ abstract class KmTextStyles {
 
   static const TextStyle labelMedium = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: FontWeight.w500,
     color: KmColors.textMuted,
-    letterSpacing: 2.0,
+    letterSpacing: 1.8,
     height: 1.0,
   );
 
   static const TextStyle labelSmall = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: FontWeight.w500,
     color: KmColors.textMuted,
-    letterSpacing: 2.5,
+    letterSpacing: 2.0,
   );
 
+  // Caption: было 10 → стало 12
   static const TextStyle caption = TextStyle(
     fontFamily: 'DMSans',
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: FontWeight.w400,
     color: KmColors.textMuted,
+    height: 1.45,
   );
 }
 
@@ -191,7 +197,6 @@ class KmTheme {
         onSurface: KmColors.textPrimary,
         onError: KmColors.textPrimary,
       ),
-
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -203,7 +208,6 @@ class KmTheme {
         titleTextStyle: KmTextStyles.displaySmall,
         iconTheme: IconThemeData(color: KmColors.textPrimary),
       ),
-
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: KmColors.surface,
         selectedItemColor: KmColors.accent,
@@ -212,18 +216,16 @@ class KmTheme {
         elevation: 0,
         selectedLabelStyle: TextStyle(
           fontFamily: 'DMSans',
-          fontSize: 9,
-          letterSpacing: 0.5,
-          fontWeight: FontWeight.w500,
+          fontSize: 11,
+          letterSpacing: 0.3,
+          fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: TextStyle(
           fontFamily: 'DMSans',
-          fontSize: 9,
-          letterSpacing: 0.5,
+          fontSize: 11,
+          letterSpacing: 0.3,
         ),
       ),
-
-      // ✅ Исправлено: CardTheme → CardThemeData
       cardTheme: CardThemeData(
         color: KmColors.surface2,
         elevation: 0,
@@ -233,13 +235,11 @@ class KmTheme {
         ),
         margin: EdgeInsets.zero,
       ),
-
       dividerTheme: const DividerThemeData(
         color: KmColors.border,
         thickness: 0.5,
         space: 0,
       ),
-
       textTheme: const TextTheme(
         displayLarge:  KmTextStyles.displayLarge,
         displayMedium: KmTextStyles.displayMedium,
@@ -251,42 +251,38 @@ class KmTheme {
         labelMedium:   KmTextStyles.labelMedium,
         labelSmall:    KmTextStyles.labelSmall,
       ),
-
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: KmColors.accent,
           foregroundColor: KmColors.background,
           textStyle: const TextStyle(
             fontFamily: 'DMSans',
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.5,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(KmRadius.sm),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           elevation: 0,
         ),
       ),
-
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: KmColors.textSecondary,
           side: const BorderSide(color: KmColors.border),
           textStyle: const TextStyle(
             fontFamily: 'DMSans',
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: FontWeight.w400,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(KmRadius.sm),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         ),
       ),
-
-      // ✅ Исправлено: WidgetStateProperty вместо MaterialStateProperty
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) return KmColors.background;

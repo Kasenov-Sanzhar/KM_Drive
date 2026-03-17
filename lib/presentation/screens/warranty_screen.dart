@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import '../../l10n/app_localizations.dart';
 
 // ============================================================
 // KM DRIVE — Warranty Screen
@@ -19,8 +20,8 @@ class WarrantyScreen extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: KmScreenHeader(
-                title: 'Гарантия',
-                subtitle: 'Действительна до 2031 г.',
+                title: AppLocalizations.of(context).get('warrantyTitle'),
+                subtitle: AppLocalizations.of(context).get('warrantySubtitle'),
                 showBack: true,
                 onBack: () => Navigator.of(context).pop(),
               ),
@@ -43,6 +44,7 @@ class _WarrantyContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -51,61 +53,51 @@ class _WarrantyContent extends StatelessWidget {
         const SizedBox(height: 24),
 
         // ── 1. Общие положения ────────────────────────────
-        const _Section(
+        _Section(
           number: '1',
-          title: 'Общие положения',
+          title: l10n.get('wSec1'),
           child: _BodyText(
-            'Компания Kassenov Motors (далее — «Производитель») '
-            'гарантирует высокое качество и надежность автомобиля KM Jaqin '
-            'и предоставляет официальные гарантийные обязательства при '
-            'соблюдении владельцем условий эксплуатации, обслуживания и '
-            'хранения, установленных настоящим гарантийным талоном.\n\n'
-            'Гарантия распространяется на все автомобили KM Jaqin, '
-            'реализованные через официальную дилерскую сеть Kassenov Motors '
-            'на территории Республики Казахстан, государств-членов ЕАЭС, '
-            'а также стран официального присутствия бренда.',
+            l10n.get('wBody1'),
           ),
         ),
 
         // ── 2. Сроки гарантии ─────────────────────────────
-        const _Section(
+        _Section(
           number: '2',
-          title: 'Срок гарантии',
+          title: l10n.get('wSec2'),
           child: _WarrantyTable(
-            headers: ['Тип гарантии', 'Срок', 'Пробег'],
+            headers: [l10n.get('wTblType'), l10n.get('wTblTerm'), l10n.get('wTblMileage')],
             rows: [
-              ['Базовая гарантия', '7 лет', '150 000 км'],
-              ['Лакокрасочное покрытие', '5 лет', 'Без ограничений'],
-              ['Сквозная коррозия кузова', '10 лет', 'Без ограничений'],
-              ['Высоковольтная батарея', '8 лет', '120 000 км'],
+              [l10n.get('wRow1_1'), l10n.get('wRow1_2'), '150 000 ${l10n.get('km')}'],
+              [l10n.get('wRow2_1'), l10n.get('wRow2_2'), l10n.get('wRowUnlim')],
+              [l10n.get('wRow3_1'), l10n.get('wRow3_2'), l10n.get('wRowUnlim')],
+              [l10n.get('wRow4_1'), l10n.get('wRow4_2'), '120 000 ${l10n.get('km')}'],
             ],
           ),
         ),
 
         // ── 3. Что покрывает ──────────────────────────────
-        const _Section(
+        _Section(
           number: '3',
-          title: 'Что покрывает гарантия',
+          title: l10n.get('wSec3'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _BodyText(
-                'Гарантия распространяется на любые дефекты материалов '
-                'и производственные недостатки, возникшие по вине '
-                'Производителя при нормальной эксплуатации автомобиля.',
+                l10n.get('wBody3'),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               _CoverageTable(
                 rows: [
-                  ['⚙️', 'Двигатель и системы', 'Включая турбокомпрессор'],
-                  ['🔄', 'Трансмиссия', 'Авто и механические КПП'],
-                  ['❄️', 'Охлаждение и отопление', 'Включая климат-контроль'],
-                  ['⚡', 'Электрооборудование', 'Все приборы и датчики'],
-                  ['🚗', 'Рулевое управление', 'Гидро- и электроусилитель'],
-                  ['🛑', 'Тормозная система', 'Кроме колодок и дисков'],
-                  ['💨', 'Подвеска', 'Амортизаторы, рычаги, опоры'],
-                  ['🛡️', 'Системы безопасности', 'Подушки, ремни, ABS, ESP'],
-                  ['🔋', 'Гибридные компоненты', 'Электродвигатели, инверторы'],
+                  ['⚙️', l10n.get('wCov1a'), l10n.get('wCov1b')],
+                  ['🔄', l10n.get('wCov2a'), l10n.get('wCov2b')],
+                  ['❄️', l10n.get('wCov3a'), l10n.get('wCov3b')],
+                  ['⚡', l10n.get('wCov4a'), l10n.get('wCov4b')],
+                  ['🚗', l10n.get('wCov5a'), l10n.get('wCov5b')],
+                  ['🛑', l10n.get('wCov6a'), l10n.get('wCov6b')],
+                  ['💨', l10n.get('wCov7a'), l10n.get('wCov7b')],
+                  ['🛡️', l10n.get('wCov8a'), l10n.get('wCov8b')],
+                  ['🔋', l10n.get('wCov9a'), l10n.get('wCov9b')],
                 ],
               ),
             ],
@@ -115,44 +107,24 @@ class _WarrantyContent extends StatelessWidget {
         // ── 4. Что не покрывает ───────────────────────────
         _Section(
           number: '4',
-          title: 'Что не покрывает гарантия',
+          title: l10n.get('wSec4'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SubTitle('4.1. Расходные материалы'),
+              _SubTitle(l10n.get('wSub41')),
               const SizedBox(height: 8),
-              ...[
-                'Тормозные колодки и диски',
-                'Щётки стеклоочистителей',
-                'Лампы освещения (кроме заводского брака)',
-                'Аккумулятор 12V (кроме брака в первые 6 мес.)',
-                'Шины и колёсные диски',
-                'Ремни и фильтры',
-                'Свечи зажигания',
-                'Жидкости и масла',
-              ].map((e) => _BulletItem(e)),
+              ...['wExcl1','wExcl2','wExcl3','wExcl4','wExcl5','wExcl6','wExcl7','wExcl8']
+                  .map((k) => _BulletItem(l10n.get(k))),
               const SizedBox(height: 12),
-              const _SubTitle('4.2. Повреждения вследствие'),
+              _SubTitle(l10n.get('wSub42')),
               const SizedBox(height: 8),
-              ...[
-                'ДТП',
-                'Нарушения правил эксплуатации',
-                'Использования неоригинальных запчастей',
-                'Изменений конструкции без согласования',
-                'Естественного износа деталей',
-                'Внешних факторов (гравий, реагенты, химия)',
-                'Форс-мажора (пожар, наводнение, стихия)',
-              ].map((e) => _BulletItem(e)),
+              ...['wExcl9','wExcl10','wExcl11','wExcl12','wExcl13','wExcl14','wExcl15']
+                  .map((k) => _BulletItem(l10n.get(k))),
               const SizedBox(height: 12),
-              const _SubTitle('4.3. Регулировочные работы'),
+              _SubTitle(l10n.get('wSub43')),
               const SizedBox(height: 8),
-              ...[
-                'Регулировка фар',
-                'Балансировка колёс',
-                'Развал-схождение',
-                'Очистка и промывка систем',
-                'Заправка кондиционера',
-              ].map((e) => _BulletItem(e)),
+              ...['wAdj1','wAdj2','wAdj3','wAdj4','wAdj5']
+                  .map((k) => _BulletItem(l10n.get(k))),
             ],
           ),
         ),
@@ -160,22 +132,13 @@ class _WarrantyContent extends StatelessWidget {
         // ── 5. Условия сохранения ─────────────────────────
         _Section(
           number: '5',
-          title: 'Условия сохранения гарантии',
+          title: l10n.get('wSec5'),
           child: Column(
             children: [
-              ...[
-                'Прохождение ТО строго у официальных дилеров Kassenov Motors',
-                'Использование оригинальных запчастей и жидкостей',
-                'Соблюдение правил обкатки (первые 3 000 км)',
-                'Своевременное информирование дилера о неисправностях',
-                'Сохранение заводских пломб и идентификационных номеров',
-                'Эксплуатация на официальном рынке присутствия KM Motors',
-              ].map((e) => _CheckItem(e)),
+              ...['wCond1','wCond2','wCond3','wCond4','wCond5','wCond6']
+                  .map((k) => _CheckItem(l10n.get(k))),
               const SizedBox(height: 10),
-              const _WarningBox(
-                'Гарантия аннулируется при выявлении фактов эксплуатации '
-                'автомобиля с нарушением правил, установленных производителем.',
-              ),
+              _WarningBox(l10n.get('wBody5Note')),
             ],
           ),
         ),
@@ -183,37 +146,27 @@ class _WarrantyContent extends StatelessWidget {
         // ── 6. Порядок обслуживания ───────────────────────
         _Section(
           number: '6',
-          title: 'Порядок гарантийного обслуживания',
+          title: l10n.get('wSec6'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SubTitle('6.1. При обнаружении неисправности'),
+              _SubTitle(l10n.get('wSub61')),
               const SizedBox(height: 8),
-              ...[
-                'Обратиться в любой официальный сервисный центр Kassenov Motors',
-                'Предоставить автомобиль, гарантийный талон и сервисную книжку',
-                'Описать характер неисправности',
-              ].map((e) => _NumberedItem(e, [
-                    'Обратиться в любой официальный сервисный центр Kassenov Motors',
-                    'Предоставить автомобиль, гарантийный талон и сервисную книжку',
-                    'Описать характер неисправности',
-                  ].indexOf(e) + 1)),
+              ...[('wProc1', 1), ('wProc2', 2), ('wProc3', 3)]
+                  .map((e) => _NumberedItem(l10n.get(e.$1), e.$2)),
               const SizedBox(height: 12),
-              const _SubTitle('6.2. Сроки рассмотрения'),
+              _SubTitle(l10n.get('wSub62')),
               const SizedBox(height: 8),
-              const _TimelineItem('Диагностика (бесплатно)', 'до 2 часов'),
-              const _TimelineItem('Решение о гарантийном ремонте', 'до 24 часов'),
-              const _TimelineItem('Сложные случаи (с заводом)', 'до 5 раб. дней'),
+              _TimelineItem(l10n.get('wTime1'), l10n.get('wTime1Val')),
+              _TimelineItem(l10n.get('wTime2'), l10n.get('wTime2Val')),
+              _TimelineItem(l10n.get('wTime3'), l10n.get('wTime3Val')),
               const SizedBox(height: 12),
-              const _SubTitle('6.3. Сроки выполнения ремонта'),
+              _SubTitle(l10n.get('wSub63')),
               const SizedBox(height: 8),
-              const _TimelineItem('Запчасти на складе', 'до 3 раб. дней'),
-              const _TimelineItem('Запчасти под заказ', 'до 21 раб. дня'),
+              _TimelineItem(l10n.get('wTime4'), l10n.get('wTime4Val')),
+              _TimelineItem(l10n.get('wTime5'), l10n.get('wTime5Val')),
               const SizedBox(height: 12),
-              const _InfoBox(
-                'При ремонте более 14 рабочих дней дилер предоставляет '
-                'подменный автомобиль (при наличии в автопарке).',
-              ),
+              _InfoBox(l10n.get('wBodyLoaner')),
             ],
           ),
         ),
@@ -221,20 +174,16 @@ class _WarrantyContent extends StatelessWidget {
         // ── 7. Передача гарантии ──────────────────────────
         _Section(
           number: '7',
-          title: 'Передача гарантии новому владельцу',
+          title: l10n.get('wSec7'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _BodyText(
-                'Гарантия является передаваемой. При продаже автомобиля '
-                'гарантийные обязательства сохраняются при условии:',
+              _BodyText(
+                l10n.get('wBody7Intro'),
               ),
               const SizedBox(height: 8),
-              ...[
-                'Уведомления дилера о смене собственника',
-                'Внесения записи в сервисную книжку',
-                'Отсутствия нарушений условий гарантии предыдущим владельцем',
-              ].map((e) => _BulletItem(e)),
+              ...['wTransf1','wTransf2','wTransf3']
+                  .map((k) => _BulletItem(l10n.get(k))),
             ],
           ),
         ),
@@ -242,91 +191,84 @@ class _WarrantyContent extends StatelessWidget {
         // ── 8. Особые условия KM Jaqin ────────────────────
         _Section(
           number: '8',
-          title: 'Особые условия KM Jaqin',
+          title: l10n.get('wSec8'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const _SubTitle('8.1. Гибридная версия'),
+              _SubTitle(l10n.get('wSub81')),
               const SizedBox(height: 8),
-              ...[
-                'Высоковольтная батарея обслуживается только у официальных дилеров',
-                'Запрещена самостоятельная замена высоковольтных компонентов',
-                'Специализированное ПО для диагностики',
-              ].map((e) => _BulletItem(e)),
+              ...['wSpec1','wSpec2','wSpec3']
+                  .map((k) => _BulletItem(l10n.get(k))),
               const SizedBox(height: 12),
-              const _SubTitle('8.2. Система полного привода (AWD)'),
+              _SubTitle(l10n.get('wSub82')),
               const SizedBox(height: 8),
-              ...[
-                'Прохождение ТО каждые 10 000 км',
-                'Использование только рекомендованных масел в трансмиссии',
-              ].map((e) => _BulletItem(e)),
+              ...['wSpec4','wSpec5']
+                  .map((k) => _BulletItem(l10n.get(k))),
               const SizedBox(height: 12),
-              const _SubTitle('8.3. Панорамная крыша'),
+              _SubTitle(l10n.get('wSub83')),
               const SizedBox(height: 8),
-              ...[
-                'Чистка дренажных систем при каждом ТО',
-                'Осторожное использование зимой (очистка от снега и наледи)',
-              ].map((e) => _BulletItem(e)),
+              ...['wSpec6','wSpec7']
+                  .map((k) => _BulletItem(l10n.get(k))),
             ],
           ),
         ),
 
         // ── 9. Поддержка на дороге ────────────────────────
-        const _Section(
+        _Section(
           number: '9',
-          title: 'Гарантийная поддержка на дороге',
+          title: l10n.get('wSec9'),
           child: Column(
             children: [
-              _ContactRow('📞', 'Горячая линия', '+7 (727) 333-44-55'),
-              SizedBox(height: 8),
-              _ContactRow('📱', 'Через KM Drive', 'Кнопка SOS'),
-              SizedBox(height: 8),
-              _ContactRow('🆘', 'Эвакуация до дилера', 'Бесплатно при гарантийном случае'),
+              _ContactRow('📞', l10n.get('wRoad1Label'), '+7 (727) 333-44-55'),
+              const SizedBox(height: 8),
+              _ContactRow('📱', l10n.get('wRoad2Label'), l10n.get('wRoad2Val')),
+              const SizedBox(height: 8),
+              _ContactRow('🆘', l10n.get('wRoad3Label'), l10n.get('wRoad3Val')),
             ],
           ),
         ),
 
         // ── 10. Расширенная гарантия ──────────────────────
-        const _Section(
+        _Section(
           number: '11',
-          title: 'Расширенная гарантия (опционально)',
+          title: l10n.get('wSec10'),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _BodyText(
-                  'Владелец может приобрести пакет KM Extended Protection:'),
-              SizedBox(height: 12),
+                  l10n.get('wBody10')),
+              const SizedBox(height: 12),
               _WarrantyTable(
-                headers: ['Пакет', 'Срок', 'Пробег'],
+                headers: [l10n.get('wTblPackage'), l10n.get('wTblTerm'), l10n.get('wTblMileage')],
                 rows: [
-                  ['Standard', '+2 года', '+50 000 км'],
-                  ['Premium', '+3 года', '+100 000 км'],
-                  ['Full', '+5 лет', '+150 000 км'],
+                  ['Standard', l10n.get('wExt2yr'), '+50 000 ${l10n.get('km')}'],
+                  ['Premium', l10n.get('wExt3yr'), '+100 000 ${l10n.get('km')}'],
+                  ['Full', l10n.get('wExt5yr'), '+150 000 ${l10n.get('km')}'],
                 ],
               ),
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
               _BodyText(
-                  'Приобретается до окончания базовой гарантии.'),
+                  l10n.get('wBody10Note')),
             ],
           ),
         ),
 
         // ── 12. Контакты ──────────────────────────────────
-        const _Section(
+        _Section(
           number: '12',
-          title: 'Контакты и поддержка',
+          title: l10n.get('wSec11'),
           child: Column(
             children: [
-              _ContactRow('☎️', 'Центр поддержки', '+7 (727) 123-45-67'),
-              SizedBox(height: 8),
-              _ContactRow('✉️', 'Гарантийный отдел', 'warranty@km.kz'),
-              SizedBox(height: 8),
-              _ContactRow('💻', 'Тех. поддержка KM Drive', 'drive@km.kz'),
-              SizedBox(height: 8),
-              _ContactRow('🆘', 'Экстренная помощь', '+7 (727) 333-44-55'),
-              SizedBox(height: 8),
-              _ContactRow('📍', 'Центральный офис',
-                  'г. Алматы, пр. Аль-Фараби, 150, БЦ «Nurly Tau»'),
+              _ContactRow('☎️', l10n.get('wContact1'), '+7 (727) 123-45-67'),
+              const SizedBox(height: 8),
+              _ContactRow('✉️', l10n.get('wContact2'), 'warranty@km.kz'),
+              const SizedBox(height: 8),
+              _ContactRow('💻', l10n.get('wContact3'), 'drive@km.kz'),
+              const SizedBox(height: 8),
+              _ContactRow('🆘', l10n.get('wContact4'), '+7 (727) 333-44-55'),
+              const SizedBox(height: 8),
+              _ContactRow('📍', l10n.get('wContact5'),
+                  l10n.get('wHQ')),
             ],
           ),
         ),
@@ -347,6 +289,7 @@ class _WarrantyContent extends StatelessWidget {
 class _DocHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -383,8 +326,8 @@ class _DocHeader extends StatelessWidget {
                 )),
           ]),
           const SizedBox(height: 14),
-          const Text('ГАРАНТИЙНЫЙ ТАЛОН',
-              style: TextStyle(
+          Text(l10n.get('wDocTitle'),
+              style: const TextStyle(
                 fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w500,
@@ -402,12 +345,12 @@ class _DocHeader extends StatelessWidget {
           const SizedBox(height: 14),
           const KmDivider(),
           const SizedBox(height: 12),
-          const Row(children: [
-            _HeaderCell('VIN', 'KMXJQ200L2400523'),
-            SizedBox(width: 20),
-            _HeaderCell('НОМЕР', 'A523KM'),
-            SizedBox(width: 20),
-            _HeaderCell('ГОД', '2024'),
+          Row(children: [
+            const _HeaderCell('VIN', 'KMXJQ200L2400523'),
+            const SizedBox(width: 20),
+            _HeaderCell(l10n.get('wDocNum'), 'A523KM'),
+            const SizedBox(width: 20),
+            _HeaderCell(l10n.get('wDocYear'), '2024'),
           ]),
         ],
       ),
@@ -903,6 +846,7 @@ class _DocFooter extends StatelessWidget {
   const _DocFooter();
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -910,26 +854,26 @@ class _DocFooter extends StatelessWidget {
         borderRadius: BorderRadius.circular(KmRadius.lg),
         border: Border.all(color: KmColors.border, width: 0.5),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text('С уважением,',
-              style: TextStyle(
+          Text(l10n.get('wSignOff'),
+              style: const TextStyle(
                 fontFamily: 'DMSans',
                 fontSize: 11,
                 color: KmColors.textMuted,
               )),
-          SizedBox(height: 4),
-          Text('Команда Kassenov Motors',
-              style: TextStyle(
+          const SizedBox(height: 4),
+          Text(l10n.get('wSignTeam'),
+              style: const TextStyle(
                 fontFamily: 'CormorantGaramond',
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
                 color: KmColors.accent,
                 letterSpacing: 0.5,
               )),
-          SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 8),
+          const Text(
             'KM Jaqin — ваша уверенность на дорогах на долгие годы.',
             style: TextStyle(
               fontFamily: 'DMSans',

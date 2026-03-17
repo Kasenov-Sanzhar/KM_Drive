@@ -174,7 +174,7 @@ class _BrandSection extends StatelessWidget {
                       const Text('·',
                           style: TextStyle(color: KmColors.accentDim, fontSize: 14)),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(t, style: KmTextStyles.caption)),
+                      Expanded(child: Text(l10n.get(t), style: KmTextStyles.caption)),
                     ]),
                   )),
               const SizedBox(height: 12),

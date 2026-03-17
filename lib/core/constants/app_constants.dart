@@ -33,11 +33,12 @@ abstract class KmBrand {
 
   static const String platformName = 'KG-6';
 
+  // l10n-ключи — переводятся через AppLocalizations
   static const List<String> techDna = [
-    'Платформа KG-6',
-    'Цифровые двойники в производстве',
-    'IIoT и предиктивная аналитика',
-    'Омниканальные продажи KM Connect',
+    'techDna1',
+    'techDna2',
+    'techDna3',
+    'techDna4',
   ];
 
   static const String appVersion = '1.0.0';

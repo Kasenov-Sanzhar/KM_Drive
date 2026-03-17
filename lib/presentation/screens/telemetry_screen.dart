@@ -259,14 +259,14 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
           markerId: const MarkerId('trip_start'),
           position: trip.routePoints.first,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-          infoWindow: InfoWindow(title: trip.from),
+          infoWindow: InfoWindow(title: AppLocalizations.of(context).get(trip.from)),
           zIndexInt: 1,
         ))
         ..add(Marker(
           markerId: const MarkerId('trip_end'),
           position: trip.routePoints.last,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
-          infoWindow: InfoWindow(title: trip.to),
+          infoWindow: InfoWindow(title: AppLocalizations.of(context).get(trip.to)),
           zIndexInt: 1,
         ));
     });
@@ -857,7 +857,7 @@ class _TripsListState extends State<_TripsList> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
-                        child: Text(t.routeLabel,
+                        child: Text('${l10n.get(t.from)} → ${l10n.get(t.to)}',
                             style: KmTextStyles.bodyMedium
                                 .copyWith(fontWeight: FontWeight.w500)),
                       ),

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "738801390261",
+    "project_id": "km-moters-ecosystem",
+    "storage_bucket": "km-moters-ecosystem.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:738801390261:android:b8a0d0281b47c012bce4fc",
+        "android_client_info": {
+          "package_name": "com.example.km_drive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeIdix80NBgAVmgbsgvV64P8e6XIgQS3Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

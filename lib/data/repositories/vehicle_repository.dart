@@ -1,3 +1,4 @@
+import '../services/notification_service.dart';
 import '../models/models.dart';
 
 // ============================================================
@@ -68,8 +69,8 @@ class MockVehicleRepository implements IVehicleRepository {
 
   @override
   Future<List<AppNotification>> getNotifications() async {
-    await Future.delayed(_delay);
-    return AppNotification.samples;
+    // Делегируем в NotificationService (FCM + SharedPrefs)
+    return NotificationService.instance.getAll();
   }
 
   @override

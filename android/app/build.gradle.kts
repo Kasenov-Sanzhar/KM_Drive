@@ -1,7 +1,10 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    // Flutter plugin — обязательно последним
     id("dev.flutter.flutter-gradle-plugin")
+    // Firebase / Google Services
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -10,6 +13,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // ✅ Обязательно для flutter_local_notifications
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -20,7 +25,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.km_drive"
-        minSdk = 24
+        minSdk = flutter.minSdkVersion                          // Firebase Messaging требует minSdk 23+
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -39,7 +44,9 @@ flutter {
 }
 
 dependencies {
+    // ✅ Desugaring — обязательно для flutter_local_notifications
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
+    // Multidex (если minSdk < 21, но лучше оставить)
     implementation("androidx.multidex:multidex:2.0.1")
-    // ✅ kotlin-stdlib больше не нужно указывать вручную —
-    // плагин kotlin-android подключает его автоматически
 }

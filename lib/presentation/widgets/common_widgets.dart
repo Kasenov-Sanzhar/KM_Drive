@@ -242,32 +242,47 @@ class KmQuickActionButton extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(KmRadius.lg),
-          border: Border.all(color: borderColor, width: 0.5),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 34, height: 34,
-              decoration: BoxDecoration(
-                color: iconBg,
-                borderRadius: BorderRadius.circular(KmRadius.sm),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(KmRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(KmRadius.lg),
+            border: Border.all(color: borderColor, width: 0.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(KmRadius.sm),
+                ),
+                child: Center(child: Text(icon, style: const TextStyle(fontSize: 14))),
               ),
-              child: Center(child: Text(icon, style: const TextStyle(fontSize: 16))),
-            ),
-            const SizedBox(height: 10),
-            Text(label,
-              style: KmTextStyles.labelLarge.copyWith(
-                color: isDanger ? KmColors.error : KmColors.textPrimary),
-            ),
-            const SizedBox(height: 2),
-            Text(subtitle, style: KmTextStyles.caption),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: KmTextStyles.bodyMedium.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDanger ? KmColors.error : KmColors.textPrimary,
+                  height: 1.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: KmTextStyles.caption.copyWith(height: 1.2),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -289,27 +304,47 @@ class KmMetricCell extends StatelessWidget {
     required this.value,
     required this.label,
     this.valueColor = KmColors.textPrimary,
+    this.valueSize,
+    this.labelSize,
   });
 
   final String value;
   final String label;
   final Color valueColor;
+  /// Если null — берётся из темы (numeralSmall = 22)
+  final double? valueSize;
+  /// Если null — берётся из темы (labelSmall = 11)
+  final double? labelSize;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(value,
-              style: KmTextStyles.numeralSmall.copyWith(color: valueColor)),
+            Text(
+              value,
+              style: KmTextStyles.numeralSmall.copyWith(
+                color: valueColor,
+                fontSize: valueSize,
+                height: 1.1,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 3),
-            Text(label.toUpperCase(),
-              style: KmTextStyles.labelSmall,
+            Text(
+              label.toUpperCase(),
+              style: KmTextStyles.labelSmall.copyWith(
+                fontSize: labelSize,
+              ),
               textAlign: TextAlign.center,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
