@@ -37,6 +37,10 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    lint {
+        disable += "ObsoleteSdkInt"
+    }
 }
 
 flutter {

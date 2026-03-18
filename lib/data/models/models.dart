@@ -21,6 +21,13 @@ class VehicleModel {
     required this.engineStatus,
     required this.tiresStatus,
     required this.healthScore,
+    this.batteryVolts    = 12.8,
+    this.engineTempC     = 91.0,
+    this.oilLevelPercent = 75.0,
+    this.tirePressure    = const TirePressure(),
+    this.engineRpm       = 0,
+    this.speedKmh        = 0.0,
+    this.dtcCodes        = const [],
   });
 
   final String id;
@@ -36,6 +43,14 @@ class VehicleModel {
   final VehicleSystemStatus engineStatus;
   final VehicleSystemStatus tiresStatus;
   final double healthScore;  // 0..100
+  // ── Расширенная телематика ───────────────────────────────
+  final double batteryVolts;    // 12V АКБ, норма 12.4–14.7V
+  final double engineTempC;     // Температура охлаждающей жидкости, норма 85–105°C
+  final double oilLevelPercent; // Уровень масла 0..100
+  final TirePressure tirePressure; // Давление в шинах (бар)
+  final int    engineRpm;       // Обороты двигателя
+  final double speedKmh;        // Текущая скорость
+  final List<DtcCode> dtcCodes; // Коды ошибок OBD
 
   static const VehicleModel sample = VehicleModel(
     id: 'km-jaqin-001',
@@ -56,6 +71,44 @@ class VehicleModel {
 
 /// Статус системы автомобиля
 enum VehicleSystemStatus { ok, warning, critical }
+
+/// Давление в шинах (бар, норма 2.2–2.5)
+class TirePressure {
+  const TirePressure({
+    this.frontLeft  = 2.4,
+    this.frontRight = 2.4,
+    this.rearLeft   = 2.3,
+    this.rearRight  = 2.3,
+  });
+  final double frontLeft;
+  final double frontRight;
+  final double rearLeft;
+  final double rearRight;
+
+  bool get allOk =>
+      [frontLeft, frontRight, rearLeft, rearRight].every((p) => p >= 2.0 && p <= 2.8);
+
+  VehicleSystemStatus get status {
+    final pressures = [frontLeft, frontRight, rearLeft, rearRight];
+    if (pressures.any((p) => p < 1.8 || p > 3.0)) return VehicleSystemStatus.critical;
+    if (pressures.any((p) => p < 2.0 || p > 2.8)) return VehicleSystemStatus.warning;
+    return VehicleSystemStatus.ok;
+  }
+}
+
+/// Код ошибки OBD (DTC)
+class DtcCode {
+  const DtcCode({
+    required this.code,
+    required this.systemKey, // l10n key
+    required this.descKey,   // l10n key
+    this.severity = VehicleSystemStatus.warning,
+  });
+  final String code;
+  final String systemKey;
+  final String descKey;
+  final VehicleSystemStatus severity;
+}
 
 extension VehicleSystemStatusExt on VehicleSystemStatus {
   /// L10n-ключ для перевода статуса
@@ -322,6 +375,9 @@ class TelemetrySummary {
     required this.currentAddress,
     required this.latitude,
     required this.longitude,
+    this.avgSpeedKmh = 42.3,
+    this.maxSpeedKmh = 87.0,
+    this.fuelUsedL   = 9.6,
   });
 
   final double dailyKm;
@@ -330,6 +386,9 @@ class TelemetrySummary {
   final String currentAddress;
   final double latitude;
   final double longitude;
+  final double avgSpeedKmh;
+  final double maxSpeedKmh;
+  final double fuelUsedL;
 
   /// Удобный геттер для передачи в Google Maps
   LatLng get position => LatLng(latitude, longitude);
