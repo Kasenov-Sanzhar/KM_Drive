@@ -175,6 +175,10 @@ class ServiceRecord {
     required this.status,
     this.description,
     this.priceKzt,
+    this.worksDone = const [],
+    this.master,
+    this.center,
+    this.nextKm,
   });
 
   final String id;
@@ -185,6 +189,10 @@ class ServiceRecord {
   final ServiceStatus status;
   final String? description;
   final int? priceKzt;
+  final List<String> worksDone; // l10n keys or plain strings
+  final String? master;
+  final String? center;
+  final int? nextKm;  // следующее ТО через N км
 
   // title и description — l10n-ключи
   static List<ServiceRecord> get samples => [
@@ -196,6 +204,10 @@ class ServiceRecord {
       mileageKm: 2647,
       status: ServiceStatus.done,
       priceKzt: 28000,
+      worksDone: ['srWork001_1', 'srWork001_2', 'srWork001_3'],
+      master: 'Алибек С.',
+      center: 'KM Motors — Розыбакиева',
+      nextKm: 12647,
     ),
     ServiceRecord(
       id: 'sr-002',
@@ -205,6 +217,9 @@ class ServiceRecord {
       mileageKm: 3102,
       status: ServiceStatus.done,
       priceKzt: 15000,
+      worksDone: ['srWork002_1', 'srWork002_2'],
+      master: 'Данияр М.',
+      center: 'KM Motors — Достык',
     ),
     ServiceRecord(
       id: 'sr-003',
@@ -214,6 +229,9 @@ class ServiceRecord {
       mileageKm: 3102,
       status: ServiceStatus.done,
       priceKzt: 8000,
+      worksDone: ['srWork003_1', 'srWork003_2'],
+      master: 'Данияр М.',
+      center: 'KM Motors — Достык',
     ),
     ServiceRecord(
       id: 'sr-004',
@@ -222,6 +240,7 @@ class ServiceRecord {
       date: DateTime(2025, 3, 15),
       mileageKm: 5000,
       status: ServiceStatus.scheduled,
+      center: 'KM Motors — Розыбакиева, 247',
     ),
     ServiceRecord(
       id: 'sr-005',
