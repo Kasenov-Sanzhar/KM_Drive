@@ -10,7 +10,6 @@
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
         
-        <!-- Эта строка заменяет useLibrary в gradle -->
         <uses-library
             android:name="org.apache.http.legacy"
             android:required="false" />
@@ -42,14 +41,28 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-
-        <!-- ✅ Отключаем Impeller — несовместим с google_maps_flutter на эмуляторе x86_64 -->
-        <meta-data
-            android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="false" />
     </application>
 
     <queries>
+        <!-- url_launcher: phone calls -->
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
+        <!-- url_launcher: WhatsApp -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
+        </intent>
+        <!-- url_launcher: geo maps -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="geo"/>
+        </intent>
+        <!-- Google Maps -->
+        <package android:name="com.google.android.apps.maps"/>
+        <!-- WhatsApp -->
+        <package android:name="com.whatsapp"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

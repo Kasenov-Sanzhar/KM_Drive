@@ -21,8 +21,20 @@ class VehicleControlState {
   bool climateOn     = false;
   double climateTemp = 22.0;
   bool lightsOn      = false;
-  bool windowsClosed = true;
+  // Окна: 0 = закрыто, 100 = полностью открыто
+  double windowsFrontLeft  = 0;
+  double windowsFrontRight = 0;
+  double windowsRearLeft   = 0;
+  double windowsRearRight  = 0;
   DateTime lastUpdate = DateTime.now();
+
+  bool get windowsClosed =>
+    windowsFrontLeft == 0 && windowsFrontRight == 0 &&
+    windowsRearLeft  == 0 && windowsRearRight  == 0;
+
+  double get windowsAvgPercent =>
+    (windowsFrontLeft + windowsFrontRight +
+     windowsRearLeft  + windowsRearRight) / 4;
 
   final List<VoidCallback> _listeners = [];
   void addListener(VoidCallback cb)    => _listeners.add(cb);
@@ -32,12 +44,21 @@ class VehicleControlState {
     for (final cb in _listeners) { cb(); }
   }
 
-  void setDoors(bool locked)   { doorsLocked   = locked;   _notify(); }
-  void setEngine(bool on)      { engineOn      = on;       _notify(); }
-  void setClimate(bool on)     { climateOn     = on;       _notify(); }
-  void setTemp(double t)       { climateTemp   = t;        _notify(); }
-  void setLights(bool on)      { lightsOn      = on;       _notify(); }
-  void setWindows(bool closed) { windowsClosed = closed;   _notify(); }
+  void setDoors(bool locked)  { doorsLocked  = locked; _notify(); }
+  void setEngine(bool on)     { engineOn     = on;     _notify(); }
+  void setClimate(bool on)    { climateOn    = on;     _notify(); }
+  void setTemp(double t)      { climateTemp  = t;      _notify(); }
+  void setLights(bool on)     { lightsOn     = on;     _notify(); }
+
+  void setWindowsFrontLeft(double v)  { windowsFrontLeft  = v; _notify(); }
+  void setWindowsFrontRight(double v) { windowsFrontRight = v; _notify(); }
+  void setWindowsRearLeft(double v)   { windowsRearLeft   = v; _notify(); }
+  void setWindowsRearRight(double v)  { windowsRearRight  = v; _notify(); }
+
+  void setAllWindows(double v) {
+    windowsFrontLeft = windowsFrontRight = windowsRearLeft = windowsRearRight = v;
+    _notify();
+  }
 }
 
 // ── Screen ────────────────────────────────────────────────────
@@ -242,23 +263,12 @@ class _RemoteControlScreenState extends State<RemoteControlScreen>
                           }),
                         ),
 
-                        // 🪟 Windows
-                        _ControlCard(
-                          icon: _state.windowsClosed ? '🪟' : '🌬️',
-                          title: l10n.get('rcWindows'),
-                          status: _state.windowsClosed
-                              ? l10n.get('rcWindowsClosed')
-                              : l10n.get('rcWindowsOpen'),
-                          statusColor: _state.windowsClosed
-                              ? KmColors.success : KmColors.info,
-                          actionLabel: _state.windowsClosed
-                              ? l10n.get('rcWindowsOpen2')
-                              : l10n.get('rcWindowsClose'),
+                        // 🪟 Windows — with percent control
+                        _WindowsCard(
+                          state: _state,
                           loading: _loading['windows'] ?? false,
-                          active: !_state.windowsClosed,
-                          onTap: () => _send('windows', () async {
-                            _state.setWindows(!_state.windowsClosed);
-                          }),
+                          l10n: l10n,
+                          onSend: _send,
                         ),
 
                         // 🔍 Find car
@@ -284,6 +294,179 @@ class _RemoteControlScreenState extends State<RemoteControlScreen>
           ],
         ),
       ),
+    );
+  }
+}
+
+
+// ── Windows Card with percent sliders ────────────────────────
+
+class _WindowsCard extends StatefulWidget {
+  const _WindowsCard({
+    required this.state,
+    required this.loading,
+    required this.l10n,
+    required this.onSend,
+  });
+  final VehicleControlState state;
+  final bool loading;
+  final AppLocalizations l10n;
+  final Future<void> Function(String, Future<void> Function()) onSend;
+
+  @override
+  State<_WindowsCard> createState() => _WindowsCardState();
+}
+
+class _WindowsCardState extends State<_WindowsCard> {
+  bool _expanded = false;
+
+  Color get _color => widget.state.windowsClosed
+      ? KmColors.success : KmColors.info;
+
+  @override
+  Widget build(BuildContext context) {
+    final s   = widget.state;
+    final l10n = widget.l10n;
+    final avg  = s.windowsAvgPercent;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: !s.windowsClosed
+            ? KmColors.info.withValues(alpha: 0.05)
+            : KmColors.surface2,
+        borderRadius: BorderRadius.circular(KmRadius.lg),
+        border: Border.all(
+          color: !s.windowsClosed ? KmColors.info : KmColors.border,
+          width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header row
+          Row(children: [
+            Text(s.windowsClosed ? '🪟' : '🌬️',
+                style: const TextStyle(fontSize: 20)),
+            const Spacer(),
+            Container(
+              width: 8, height: 8,
+              decoration: BoxDecoration(
+                color: !s.windowsClosed ? KmColors.info : KmColors.surface3,
+                shape: BoxShape.circle),
+            ),
+          ]),
+          const SizedBox(height: 6),
+          Text(l10n.get('rcWindows'),
+              style: KmTextStyles.bodySmall
+                  .copyWith(fontWeight: FontWeight.w600,
+                      color: KmColors.textPrimary)),
+          const SizedBox(height: 2),
+          Text(
+            s.windowsClosed
+                ? l10n.get('rcWindowsClosed')
+                : '${avg.toInt()}%',
+            style: KmTextStyles.caption.copyWith(color: _color)),
+
+          const SizedBox(height: 8),
+
+          // Expand/collapse toggle
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 7),
+              decoration: BoxDecoration(
+                color: KmColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(KmRadius.sm),
+                border: Border.all(
+                    color: KmColors.info.withValues(alpha: 0.3), width: 0.5),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _expanded ? '▲' : l10n.get('rcWindowsPercent'),
+                    style: const TextStyle(fontFamily: 'DMSans',
+                        fontSize: 10, fontWeight: FontWeight.w600,
+                        color: KmColors.info),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Sliders (expanded)
+          if (_expanded) ...[
+            const SizedBox(height: 10),
+            // All windows at once
+            _WindowSlider(
+              label: l10n.get('rcAllWindows'),
+              value: avg,
+              onChanged: (v) {
+                widget.onSend('windows_all', () async => s.setAllWindows(v));
+              },
+            ),
+            const SizedBox(height: 6),
+            // Individual
+            _WindowSlider(label: 'FL', value: s.windowsFrontLeft,
+                onChanged: (v) => widget.onSend('wfl', () async => s.setWindowsFrontLeft(v))),
+            _WindowSlider(label: 'FR', value: s.windowsFrontRight,
+                onChanged: (v) => widget.onSend('wfr', () async => s.setWindowsFrontRight(v))),
+            _WindowSlider(label: 'RL', value: s.windowsRearLeft,
+                onChanged: (v) => widget.onSend('wrl', () async => s.setWindowsRearLeft(v))),
+            _WindowSlider(label: 'RR', value: s.windowsRearRight,
+                onChanged: (v) => widget.onSend('wrr', () async => s.setWindowsRearRight(v))),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WindowSlider extends StatelessWidget {
+  const _WindowSlider({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+  final String label;
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(children: [
+        SizedBox(width: 26,
+            child: Text(label, style: KmTextStyles.caption
+                .copyWith(fontSize: 10))),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 2,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+              activeTrackColor: KmColors.info,
+              inactiveTrackColor: KmColors.surface3,
+              thumbColor: KmColors.info,
+              overlayColor: KmColors.info.withValues(alpha: 0.2),
+            ),
+            child: Slider(
+              value: value,
+              min: 0, max: 100, divisions: 10,
+              onChanged: onChanged,
+            ),
+          ),
+        ),
+        SizedBox(width: 32,
+            child: Text('${value.toInt()}%',
+                style: KmTextStyles.caption.copyWith(
+                    color: KmColors.info, fontSize: 10),
+                textAlign: TextAlign.right)),
+      ]),
     );
   }
 }

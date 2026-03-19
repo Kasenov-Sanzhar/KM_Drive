@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
@@ -35,6 +37,8 @@ const _kMapStyle = '''
 // Абая 8А — позиция машины по умолчанию (эмулятор)
 const _kAlmaty = LatLng(43.25666, 76.94461);
 
+const _kTelGoogleApiKey = 'AIzaSyC-26zwrGkcAkEE5TXMKPuWq0FJMyxXtNk';
+
 // ============================================================
 // KM DRIVE — Telemetry Screen v2
 // Tabs: Overview | Engine/ECU | Tires | Trips + GPS map
@@ -57,6 +61,15 @@ class _TelemetryScreenState extends State<TelemetryScreen>
   List<TripRecord>  _trips = [];
   bool _loading = true;
 
+  // ── Live simulation fields ─────────────────────────────────
+  Timer? _liveTimer;
+  final double _liveFuel     = 72.0;
+  double _liveBattery  = 12.8;
+  double _liveTemp     = 91.0;
+  double _liveOil      = 75.0;
+  int    _liveRpm      = 0;
+  int    _liveTick     = 0;
+
   late TabController _tabs;
 
   // GPS / Map
@@ -77,6 +90,7 @@ class _TelemetryScreenState extends State<TelemetryScreen>
     _tabs = TabController(length: 4, vsync: this);
     _loadData();
     _initLocation();
+    _startLiveSimulation();
   }
 
   Future<void> _loadData() async {
@@ -102,6 +116,26 @@ class _TelemetryScreenState extends State<TelemetryScreen>
     final ctrl = await _mapCompleter.future;
     ctrl.animateCamera(CameraUpdate.newCameraPosition(
         CameraPosition(target: s.position, zoom: 15)));
+  }
+
+  void _startLiveSimulation() {
+    _liveTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      _liveTick++;
+      setState(() {
+        // Двигатель заглушен — топливо не расходуется
+        // _liveFuel остаётся неизменным
+        _liveBattery  = 12.8 + ((_liveTick % 6) - 3) * 0.07;
+        if (_liveTemp < 91) {
+          _liveTemp = (_liveTemp + 1.5).clamp(0, 105);
+        } else {
+          _liveTemp = 91.0 + ((_liveTick % 4) - 2) * 0.8;
+        }
+        _liveOil = (_liveOil - 0.01).clamp(0, 100);
+        // Двигатель заглушен — обороты 0
+        _liveRpm   = 0;
+      });
+    });
   }
 
   Future<void> _initLocation() async {
@@ -210,22 +244,12 @@ class _TelemetryScreenState extends State<TelemetryScreen>
     final trip = _trips[idx];
     if (trip.routePoints.isEmpty) return;
     final l10n = AppLocalizations.of(context);
+    // Place start/end markers immediately
     setState(() {
       _selectedTrip = idx;
-      _polylines.clear();
       _markers
         ..removeWhere((m) => m.markerId == const MarkerId('trip_start'))
-        ..removeWhere((m) => m.markerId == const MarkerId('trip_end'));
-      _polylines.add(Polyline(
-        polylineId: const PolylineId('last_trip'),
-        points: trip.routePoints,
-        color: const Color(0xFFC8A96E),
-        width: 4,
-        startCap: Cap.roundCap,
-        endCap: Cap.roundCap,
-        jointType: JointType.round,
-      ));
-      _markers
+        ..removeWhere((m) => m.markerId == const MarkerId('trip_end'))
         ..add(Marker(
           markerId: const MarkerId('trip_start'),
           position: trip.routePoints.first,
@@ -242,12 +266,90 @@ class _TelemetryScreenState extends State<TelemetryScreen>
         ));
     });
     _followGps = false;
-    _fitBounds(trip.routePoints);
+    _fitBounds([trip.routePoints.first, trip.routePoints.last]);
+    // Build real route via Directions API
+    _buildDirectionsRoute(trip.routePoints.first, trip.routePoints.last);
   }
 
-  void _fitBounds(List<LatLng> pts) async {
-    if (pts.isEmpty) return;
-    final ctrl = await _mapCompleter.future;
+  Future<void> _buildDirectionsRoute(LatLng from, LatLng to) async {
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/directions/json'
+      '?origin=${from.latitude},${from.longitude}'
+      '&destination=${to.latitude},${to.longitude}'
+      '&mode=driving&language=ru'
+      '&key=$_kTelGoogleApiKey',
+    );
+    try {
+      final res = await http.get(url).timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        if (data['status'] == 'OK') {
+          final routes = data['routes'] as List;
+          if (routes.isNotEmpty) {
+            final encoded = routes[0]['overview_polyline']['points'] as String;
+            final pts = _decodePolyline(encoded);
+            if (mounted) {
+              setState(() {
+                _polylines
+                  ..clear()
+                  ..add(Polyline(
+                    polylineId: const PolylineId('last_trip'),
+                    points: pts,
+                    color: const Color(0xFFC8A96E),
+                    width: 4,
+                    startCap: Cap.roundCap,
+                    endCap: Cap.roundCap,
+                    jointType: JointType.round,
+                  ));
+              });
+              _fitBounds(pts);
+            }
+            return;
+          }
+        }
+      }
+    } catch (_) {}
+    // Fallback: straight line between points
+    if (mounted) {
+      setState(() {
+        _polylines
+          ..clear()
+          ..add(Polyline(
+            polylineId: const PolylineId('last_trip'),
+            points: [from, to],
+            color: const Color(0xFFC8A96E),
+            width: 4,
+          ));
+      });
+    }
+  }
+
+  List<LatLng> _decodePolyline(String encoded) {
+    final pts = <LatLng>[];
+    int idx = 0, lat = 0, lng = 0;
+    while (idx < encoded.length) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(idx++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      lat += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      shift = 0; result = 0;
+      do {
+        b = encoded.codeUnitAt(idx++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      lng += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+      pts.add(LatLng(lat / 1e5, lng / 1e5));
+    }
+    return pts;
+  }
+
+  Future<void> _fitBounds(List<LatLng> pts) async {
+    if (pts.isEmpty || _mapCtrl == null) return;
+    final ctrl = _mapCtrl!;
     double minLat = pts.first.latitude, maxLat = pts.first.latitude;
     double minLng = pts.first.longitude, maxLng = pts.first.longitude;
     for (final p in pts) {
@@ -265,21 +367,18 @@ class _TelemetryScreenState extends State<TelemetryScreen>
     ));
   }
 
-  Future<void> _zoomIn() async {
-    final ctrl = await _mapCompleter.future;
-    ctrl.animateCamera(CameraUpdate.zoomIn());
+  void _zoomIn() {
+    _mapCtrl?.animateCamera(CameraUpdate.zoomIn());
   }
 
-  Future<void> _zoomOut() async {
-    final ctrl = await _mapCompleter.future;
-    ctrl.animateCamera(CameraUpdate.zoomOut());
+  void _zoomOut() {
+    _mapCtrl?.animateCamera(CameraUpdate.zoomOut());
   }
 
-  void _goToCurrentLocation() async {
+  void _goToCurrentLocation() {
     _followGps = true;
     final target = _summary?.position ?? _kAlmaty;
-    final ctrl = await _mapCompleter.future;
-    ctrl.animateCamera(CameraUpdate.newCameraPosition(
+    _mapCtrl?.animateCamera(CameraUpdate.newCameraPosition(
         CameraPosition(target: target, zoom: 15)));
   }
 
@@ -287,8 +386,8 @@ class _TelemetryScreenState extends State<TelemetryScreen>
   void dispose() {
     _tabs.dispose();
     _posStream?.cancel();
+    _liveTimer?.cancel();
     _mapCtrl?.dispose();
-    _mapCompleter.future.then((c) => c.dispose()).catchError((_) {});
     super.dispose();
   }
 
@@ -359,8 +458,11 @@ class _TelemetryScreenState extends State<TelemetryScreen>
               child: TabBarView(
                 controller: _tabs,
                 children: [
-                  _OverviewTab(vehicle: v, summary: s, address: _currentAddress.isEmpty ? s.currentAddress : _currentAddress),
-                  _EngineTab(vehicle: v),
+                  _OverviewTab(vehicle: v, summary: s,
+                    address: _currentAddress.isEmpty ? s.currentAddress : _currentAddress,
+                    liveFuel: _liveFuel, liveBattery: _liveBattery,
+                    liveTemp: _liveTemp, liveOil: _liveOil),
+                  _EngineTab(vehicle: v, liveRpm: _liveRpm, liveTemp: _liveTemp),
                   _TiresTab(vehicle: v),
                   _TripsTab(
                     trips: _trips,
@@ -402,17 +504,23 @@ class _OverviewTab extends StatelessWidget {
     required this.vehicle,
     required this.summary,
     required this.address,
+    required this.liveFuel,
+    required this.liveBattery,
+    required this.liveTemp,
+    required this.liveOil,
   });
   final VehicleModel vehicle;
   final TelemetrySummary summary;
   final String address;
+  final double liveFuel;
+  final double liveBattery;
+  final double liveTemp;
+  final double liveOil;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     // Estimate range: ~10L per 100km, tank ~60L
-    final rangeKm = (vehicle.fuelPercent / 100 * 60 / 10 * 100).toInt();
-
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
       child: Column(
@@ -440,28 +548,28 @@ class _OverviewTab extends StatelessWidget {
               _MetricTile(
                 icon: '⛽',
                 label: l10n.get('telFuel'),
-                value: '${vehicle.fuelPercent.toInt()}%',
-                subValue: '~$rangeKm ${l10n.get('telOilKm')}',
+                value: '${liveFuel.toInt()}%',
+                subValue: l10n.get('telEngineOff'),
                 subLabel: l10n.get('telRangeKm'),
-                progress: vehicle.fuelPercent / 100,
-                color: vehicle.fuelPercent < 20
-                    ? KmColors.error
-                    : vehicle.fuelPercent < 40
+                progress: liveFuel / 100,
+                color: liveFuel >= 70
+                    ? KmColors.success
+                    : liveFuel >= 30
                         ? KmColors.warning
-                        : KmColors.success,
+                        : KmColors.error,
               ),
               _MetricTile(
                 icon: '🔋',
                 label: l10n.get('telBattery'),
-                value: '${vehicle.batteryVolts.toStringAsFixed(1)} ${l10n.get('telBatteryVolts')}',
+                value: '${liveBattery.toStringAsFixed(1)} ${l10n.get('telBatteryVolts')}',
                 subValue: l10n.get('telBattRange'),
                 subLabel: l10n.get('telNormal'),
-                progress: ((vehicle.batteryVolts - 11.5) / 3.2).clamp(0, 1),
-                color: vehicle.batteryVolts < 12.0
-                    ? KmColors.error
-                    : vehicle.batteryVolts < 12.4
+                progress: ((liveBattery - 11.5) / 3.2).clamp(0, 1),
+                color: liveBattery >= 12.4
+                    ? KmColors.success
+                    : liveBattery >= 12.0
                         ? KmColors.warning
-                        : KmColors.success,
+                        : KmColors.error,
               ),
               _MetricTile(
                 icon: '🛣️',
@@ -475,15 +583,17 @@ class _OverviewTab extends StatelessWidget {
               _MetricTile(
                 icon: '🌡️',
                 label: l10n.get('telEngineTemp'),
-                value: '${vehicle.engineTempC.toInt()}°C',
+                value: '${liveTemp.toInt()}°C',
                 subValue: l10n.get('telEngTempRange'),
                 subLabel: l10n.get('telNormal'),
-                progress: ((vehicle.engineTempC - 60) / 80).clamp(0, 1),
-                color: vehicle.engineTempC > 110
+                progress: ((liveTemp - 60) / 80).clamp(0, 1),
+                color: liveTemp > 110
                     ? KmColors.error
-                    : vehicle.engineTempC > 105
+                    : liveTemp > 105
                         ? KmColors.warning
-                        : KmColors.success,
+                        : liveTemp >= 80
+                            ? KmColors.success
+                            : KmColors.warning,
               ),
             ],
           ),
@@ -520,14 +630,14 @@ class _OverviewTab extends StatelessWidget {
                 Row(children: [
                   Expanded(child: Text(l10n.get('telOil'),
                       style: KmTextStyles.bodySmall)),
-                  Text('${vehicle.oilLevelPercent.toInt()}%',
+                  Text('${liveOil.toInt()}%',
                       style: KmTextStyles.bodySmall.copyWith(
-                          color: _oilColor(vehicle.oilLevelPercent),
+                          color: _oilColor(liveOil),
                           fontWeight: FontWeight.w600)),
                 ]),
                 const SizedBox(height: 6),
-                KmProgressBar(value: vehicle.oilLevelPercent / 100,
-                    height: 4),
+                KmProgressBar(value: liveOil / 100,
+                    height: 4, color: _oilColor(liveOil)),
                 const SizedBox(height: 6),
                 Text('${l10n.get('telOilRange')} 1 200 ${l10n.get('telOilKm')}',
                     style: KmTextStyles.caption),
@@ -542,7 +652,9 @@ class _OverviewTab extends StatelessWidget {
   Color _ecoColor(int s) =>
       s >= 80 ? KmColors.success : s >= 60 ? KmColors.warning : KmColors.error;
   Color _oilColor(double p) =>
-      p >= 60 ? KmColors.success : p >= 30 ? KmColors.warning : KmColors.error;
+      p > 75 ? KmColors.success    // масло свежее
+             : p > 50 ? KmColors.warning  // скоро замена
+                      : KmColors.error;   // срочно менять
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -550,8 +662,14 @@ class _OverviewTab extends StatelessWidget {
 // ══════════════════════════════════════════════════════════════
 
 class _EngineTab extends StatelessWidget {
-  const _EngineTab({required this.vehicle});
+  const _EngineTab({
+    required this.vehicle,
+    required this.liveRpm,
+    required this.liveTemp,
+  });
   final VehicleModel vehicle;
+  final int    liveRpm;
+  final double liveTemp;
 
   @override
   Widget build(BuildContext context) {
@@ -575,24 +693,16 @@ class _EngineTab extends StatelessWidget {
             Expanded(child: _GaugeCard(
               icon: '⚡',
               label: l10n.get('telRpm'),
-              value: '${vehicle.engineRpm}',
+              value: '$liveRpm',
               unit: 'RPM',
-              progress: vehicle.engineRpm / 7000,
-              color: vehicle.engineRpm > 5000
+              progress: (liveRpm / 7000).clamp(0, 1),
+              color: liveRpm > 5000
                   ? KmColors.error
-                  : vehicle.engineRpm > 3500
+                  : liveRpm > 3500
                       ? KmColors.warning
                       : KmColors.success,
             )),
-            const SizedBox(width: 10),
-            Expanded(child: _GaugeCard(
-              icon: '🏎️',
-              label: l10n.get('telSpeed'),
-              value: '${vehicle.speedKmh.toInt()}',
-              unit: l10n.get('kmh'),
-              progress: vehicle.speedKmh / 200,
-              color: KmColors.accent,
-            )),
+
           ]),
           const SizedBox(height: 12),
 
@@ -604,16 +714,23 @@ class _EngineTab extends StatelessWidget {
               Row(children: [
                 Expanded(child: Text(l10n.get('telEngineTemp'),
                     style: KmTextStyles.bodySmall)),
-                Text('${vehicle.engineTempC.toInt()}°C',
+                Text('${liveTemp.toInt()}°C',
                     style: KmTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: vehicle.engineTempC > 105
-                            ? KmColors.error : KmColors.success)),
+                        color: liveTemp > 110
+                            ? KmColors.error
+                            : liveTemp > 105
+                                ? KmColors.warning
+                                : KmColors.success)),
               ]),
               const SizedBox(height: 8),
               KmProgressBar(
-                  value: ((vehicle.engineTempC - 60) / 80).clamp(0, 1),
-                  height: 5),
+                  value: ((liveTemp - 60) / 80).clamp(0, 1),
+                  height: 5,
+                  color: liveTemp > 110 ? KmColors.error
+                      : liveTemp > 105 ? KmColors.warning
+                      : liveTemp >= 80 ? KmColors.success
+                      : KmColors.warning),
               const SizedBox(height: 4),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -635,12 +752,12 @@ class _EngineTab extends StatelessWidget {
               _ecuRow('⚙️', l10n.get('diagEngine'), vehicle.engineStatus, l10n),
               const Divider(color: KmColors.border, height: 16, thickness: 0.5),
               _ecuRow('🔋', l10n.get('diagBattery'),
-                  vehicle.batteryVolts >= 12.4
+                  liveTemp >= 80 && liveTemp <= 105
                       ? VehicleSystemStatus.ok
                       : VehicleSystemStatus.warning, l10n),
               const Divider(color: KmColors.border, height: 16, thickness: 0.5),
               _ecuRow('🌡️', l10n.get('diagCooling'),
-                  vehicle.engineTempC <= 105
+                  liveTemp <= 105
                       ? VehicleSystemStatus.ok
                       : VehicleSystemStatus.warning, l10n),
               const Divider(color: KmColors.border, height: 16, thickness: 0.5),
@@ -1628,7 +1745,7 @@ class _MetricTile extends StatelessWidget {
               style: KmTextStyles.numeralSmall.copyWith(
                   color: color, fontSize: 20)),
           if (progress != null) ...[
-            KmProgressBar(value: progress!.clamp(0, 1), height: 3),
+            KmProgressBar(value: progress!.clamp(0, 1), height: 3, color: color),
             const SizedBox(height: 2),
           ],
           Row(children: [
