@@ -7,6 +7,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'data/services/notification_service.dart';
+import 'data/services/push_service.dart';
+import 'data/services/sync_service.dart';
 
 import 'core/locale/locale_scope.dart';
 import 'core/theme/app_theme.dart';
@@ -35,6 +37,12 @@ void main() async {
   // Init notification service
   await NotificationService.instance.init();
   await NotificationService.instance.seedDemoIfEmpty();
+
+  // Init push notifications (FCM)
+  await PushService.instance.init();
+
+  // Init sync service (Firestore + connectivity)
+  await SyncService.instance.init();
 
   await initializeDateFormatting('ru_RU', null);
   await initializeDateFormatting('kk_KZ', null);

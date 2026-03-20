@@ -91,7 +91,6 @@ class _DealerScreenState extends State<DealerScreen>
     with SingleTickerProviderStateMixin {
 
   // ── Map
-  final Completer<GoogleMapController> _mapCompleter = Completer();
   GoogleMapController? _mapCtrl;
   final Set<Marker>   _markers   = {};
   final Set<Polyline> _polylines = {};
@@ -106,6 +105,7 @@ class _DealerScreenState extends State<DealerScreen>
   // ── Route state
   bool _routeBuilding = false;
   bool _routeBuilt    = false;
+  AppLocalizations? _l10n;
   LatLng? _routeDest;    // destination of current route
 
   // ── GPS (identical to TelemetryScreen)
@@ -135,6 +135,7 @@ class _DealerScreenState extends State<DealerScreen>
     _searchCtrl.dispose();
     _posStream?.cancel();
     _mapCtrl?.dispose();
+    _mapCtrl = null;
     super.dispose();
   }
 
@@ -297,10 +298,17 @@ class _DealerScreenState extends State<DealerScreen>
   }
 
   void _selectDealer(_Dealer d) {
+    if (!mounted) return;
     setState(() { _selected = d; _routeBuilt = false; _polylines.clear(); });
     _rebuildAllMarkers();
-    _mapCtrl?.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: d.pos, zoom: 15)));
+    // Switch to map tab and animate
+    if (_tabs.index != 0) _tabs.animateTo(0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _mapCtrl != null) {
+        _mapCtrl!.animateCamera(CameraUpdate.newCameraPosition(
+            CameraPosition(target: d.pos, zoom: 15)));
+      }
+    });
   }
 
   void _changeFilter(int v) {
@@ -340,6 +348,8 @@ class _DealerScreenState extends State<DealerScreen>
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
         final status = data['status'] as String;
+        // ignore: avoid_print
+        if (status != 'OK') print('[DealerScreen] Directions API: \$status');
         if (status == 'OK') {
           final routes = data['routes'] as List;
           if (routes.isNotEmpty) {
@@ -368,12 +378,15 @@ class _DealerScreenState extends State<DealerScreen>
           }
         }
       }
-    } catch (_) {}
+    } catch (e) {
+      // ignore: avoid_print
+      print('[DealerScreen] _buildRoute error: \$e');
+    }
 
-    // Fallback: show error
+    // Fallback: snack only if API call truly failed (not just unmounted)
     if (mounted) {
       setState(() => _routeBuilding = false);
-      _snack('Не удалось построить маршрут');
+      _snack(_l10n?.get('dealerRouteFailed') ?? 'Не удалось построить маршрут');
     }
   }
 
@@ -405,9 +418,9 @@ class _DealerScreenState extends State<DealerScreen>
     return pts;
   }
 
-  Future<void> _fitBounds(List<LatLng> pts) async {
-    if (pts.isEmpty) return;
-    final ctrl = await _mapCompleter.future;
+  void _fitBounds(List<LatLng> pts) {
+    if (pts.isEmpty || _mapCtrl == null || !mounted) return;
+    final ctrl = _mapCtrl!;
     double minLat = pts.first.latitude, maxLat = pts.first.latitude;
     double minLng = pts.first.longitude, maxLng = pts.first.longitude;
     for (final p in pts) {
@@ -416,6 +429,7 @@ class _DealerScreenState extends State<DealerScreen>
       if (p.longitude < minLng) minLng = p.longitude;
       if (p.longitude > maxLng) maxLng = p.longitude;
     }
+    if (!mounted || _mapCtrl == null) return;
     ctrl.animateCamera(CameraUpdate.newLatLngBounds(
       LatLngBounds(
         southwest: LatLng(minLat - 0.005, minLng - 0.005),
@@ -438,8 +452,8 @@ class _DealerScreenState extends State<DealerScreen>
         final ll = LatLng(locs.first.latitude, locs.first.longitude);
         setState(() { _searchResult = ll; _searchLabel = query; });
         _rebuildAllMarkers();
-        final c = await _mapCompleter.future;
-        c.animateCamera(CameraUpdate.newCameraPosition(
+        if (!mounted || _mapCtrl == null) return;
+        _mapCtrl!.animateCamera(CameraUpdate.newCameraPosition(
             CameraPosition(target: ll, zoom: 16)));
       }
     } catch (_) {}
@@ -508,6 +522,7 @@ class _DealerScreenState extends State<DealerScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    _l10n = l10n;
     return Scaffold(
       backgroundColor: KmColors.background,
       body: SafeArea(child: Column(children: [
@@ -565,13 +580,20 @@ class _DealerScreenState extends State<DealerScreen>
             target: LatLng(43.235, 76.920), zoom: 12),
         onMapCreated: (c) {
           _mapCtrl = c;
-          if (!_mapCompleter.isCompleted) _mapCompleter.complete(c);
-          // Move camera to Алматы and place markers immediately
           c.animateCamera(CameraUpdate.newCameraPosition(
               const CameraPosition(target: _kAlmaty, zoom: 12)));
           _rebuildAllMarkers();
         },
-        onTap: (_) => setState(() => _selected = null),
+        onTap: (_) {
+          setState(() {
+            _selected = null;
+            if (_routeBuilt) {
+              _polylines.clear();
+              _routeBuilt = false;
+              _routeDest  = null;
+            }
+          });
+        },
         markers:   _markers,
         polylines: _polylines,
         mapType: MapType.normal,
@@ -616,19 +638,19 @@ class _DealerScreenState extends State<DealerScreen>
       Positioned(top:12, right:16,
         child: Column(children: [
           _MapBtn(icon: Icons.my_location_rounded, onTap: () async {
-            final c = await _mapCompleter.future;
-            c.animateCamera(CameraUpdate.newCameraPosition(
+            if (!mounted || _mapCtrl == null) return;
+            _mapCtrl!.animateCamera(CameraUpdate.newCameraPosition(
                 CameraPosition(target: _userPos, zoom: 15)));
           }),
           const SizedBox(height:6),
           _MapBtn(icon: Icons.add_rounded, onTap: () async {
-            final c = await _mapCompleter.future;
-            c.animateCamera(CameraUpdate.zoomIn());
+            if (!mounted || _mapCtrl == null) return;
+            _mapCtrl!.animateCamera(CameraUpdate.zoomIn());
           }),
           const SizedBox(height:6),
           _MapBtn(icon: Icons.remove_rounded, onTap: () async {
-            final c = await _mapCompleter.future;
-            c.animateCamera(CameraUpdate.zoomOut());
+            if (!mounted || _mapCtrl == null) return;
+            _mapCtrl!.animateCamera(CameraUpdate.zoomOut());
           }),
         ]),
       ),
@@ -775,7 +797,14 @@ class _DealerScreenState extends State<DealerScreen>
                               child: const Icon(Icons.phone_rounded,
                                   color: KmColors.success, size:20)),
                             const SizedBox(height:8),
-                            GestureDetector(onTap: () => _buildRoute(d.pos),
+                            GestureDetector(onTap: () {
+                              _selectDealer(d);
+                              _tabs.animateTo(0);
+                              Future.delayed(
+                                const Duration(milliseconds: 400),
+                                () => _buildRoute(d.pos),
+                              );
+                            },
                               child: const Icon(Icons.navigation_rounded,
                                   color: KmColors.accent, size:20)),
                           ]),

@@ -1,5 +1,8 @@
 import 'dart:convert';
+import 'package:firebase_core/firebase_core.dart';
+import '../../firebase_options.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
@@ -21,6 +24,10 @@ import '../models/models.dart';
 /// Background handler — обязательно top-level функция
 @pragma('vm:entry-point')
 Future<void> firebaseBackgroundHandler(RemoteMessage message) async {
+  // Background isolate needs its own Firebase init
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   await NotificationService.instance._saveNotification(_fromRemote(message));
 }
 
@@ -28,11 +35,9 @@ AppNotification _fromRemote(RemoteMessage msg) {
   final data = msg.data;
   return AppNotification(
     id: msg.messageId ?? '${DateTime.now().millisecondsSinceEpoch}',
-    title: msg.notification?.body ??
-           msg.notification?.title ??
-           data['body'] as String? ??
-           'notif_generic',
-    type: _typeOf(data['type'] as String? ?? 'info'),
+    title: msg.notification?.title ?? data['title'] as String? ?? 'notif_generic',
+    body:  msg.notification?.body  ?? data['body']  as String? ?? '',
+    type:  _typeOf(data['type'] as String? ?? 'info'),
     time: DateTime.now(),
   );
 }
@@ -48,7 +53,7 @@ NotificationType _typeOf(String s) {
 
 // ── Сервис ────────────────────────────────────────────────────
 
-class NotificationService {
+class NotificationService with WidgetsBindingObserver {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
@@ -58,12 +63,49 @@ class NotificationService {
   static const _prefsKey  = 'km_notifications_v2';
   static const _channelId = 'km_drive_high';
 
-  /// Колбек — вызывается при новом foreground-уведомлении
-  void Function(AppNotification)? onNewNotification;
+
+  // ── Listeners — поддерживают несколько подписчиков ─────────
+
+  final _newListeners  = <String, void Function(AppNotification)>{};
+  final _listListeners = <String, void Function()>{};
+
+  void addNewNotificationListener(String key, void Function(AppNotification) cb) {
+    _newListeners[key] = cb;
+  }
+  void removeNewNotificationListener(String key) => _newListeners.remove(key);
+
+  void addListChangedListener(String key, void Function() cb) {
+    _listListeners[key] = cb;
+  }
+  void removeListChangedListener(String key) => _listListeners.remove(key);
+
+  void _notifyNew(AppNotification n) {
+    for (final cb in _newListeners.values) { cb(n); }
+  }
+  void _notifyChanged() {
+    for (final cb in _listListeners.values) { cb(); }
+  }
+
+  // Legacy single-callback support (backward compat)
+  set onNewNotification(void Function(AppNotification)? cb) {
+    if (cb == null) { _newListeners.remove('_legacy'); }
+    else            { _newListeners['_legacy'] = cb; }
+  }
+  set onListChanged(void Function()? cb) {
+    if (cb == null) { _listListeners.remove('_legacy'); }
+    else            { _listListeners['_legacy'] = cb; }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+  }
 
   // ── Инициализация ─────────────────────────────────────────
 
   Future<void> init() async {
+    // Track app lifecycle to avoid showing system notification when app is open
+    WidgetsBinding.instance.addObserver(this);
+
     // Разрешение на уведомления (iOS + Android 13+)
     await _fcm.requestPermission(alert: true, badge: true, sound: true);
 
@@ -89,9 +131,12 @@ class NotificationService {
     // Foreground — приложение открыто
     FirebaseMessaging.onMessage.listen((msg) async {
       final n = _fromRemote(msg);
-      await _saveNotification(n);
-      _showLocal(msg);
-      onNewNotification?.call(n);
+      // 1. Update UI immediately — no waiting
+      _notifyNew(n);
+      // 2. Persist in background
+      _saveNotification(n);
+      // 3. Show system banner in background (doesn't block UI)
+      Future.microtask(() => _showLocal(msg));
     });
 
     // Background tap — пользователь нажал на уведомление
@@ -99,10 +144,13 @@ class NotificationService {
       await _saveNotification(_fromRemote(msg).copyWithRead(true));
     });
 
-    // Terminated — приложение было закрыто
+    // Terminated — приложение запущено по тапу на уведомление
     final initial = await _fcm.getInitialMessage();
     if (initial != null) {
-      await _saveNotification(_fromRemote(initial));
+      final n = _fromRemote(initial).copyWithRead(false);
+      await _saveNotification(n);
+      // Notify after slight delay — listeners register after init
+      Future.delayed(const Duration(milliseconds: 500), () => _notifyNew(n));
     }
 
     // Подписка на топики для рассылки
@@ -110,9 +158,47 @@ class NotificationService {
     await _fcm.subscribeToTopic('km_service_reminders');
   }
 
+
+
   // ── Публичный API ─────────────────────────────────────────
 
   Future<String?> getToken() => _fcm.getToken();
+
+  /// Called from PushService when FCM message arrives
+  Future<void> saveFromFCM({
+    required String title,
+    String body = '',
+    required Map<String, dynamic> data,
+  }) async {
+    final type = _typeFromData(data);
+    final n = AppNotification(
+      id:     DateTime.now().millisecondsSinceEpoch.toString(),
+      title:  title,
+      body:   body,
+      time:   DateTime.now(),
+      type:   type,
+      isRead: false,
+    );
+    await _saveNotification(n);
+    _notifyNew(n);
+  }
+
+  NotificationType _typeFromData(Map<String, dynamic> data) {
+    final t = data['type'] as String? ?? '';
+    switch (t) {
+      case 'warning': return NotificationType.warning;
+      case 'success': return NotificationType.success;
+      case 'error':   return NotificationType.error;
+      default:        return NotificationType.info;
+    }
+  }
+
+  /// Saves notification without blocking UI — fire-and-forget
+  void saveNotificationLocal(AppNotification n) {
+    _saveNotification(n); // async, not awaited
+    _notifyNew(n);
+    _notifyChanged();
+  }
 
   Future<List<AppNotification>> getAll() async {
     final prefs = await SharedPreferences.getInstance();
@@ -136,16 +222,19 @@ class NotificationService {
     final list = await getAll();
     await _persist(
         list.map((n) => n.id == id ? n.copyWithRead(true) : n).toList());
+    _notifyChanged();
   }
 
   Future<void> markAllRead() async {
     final list = await getAll();
     await _persist(list.map((n) => n.copyWithRead(true)).toList());
+    _notifyChanged();
   }
 
   Future<void> deleteOne(String id) async {
     final list = await getAll();
     await _persist(list.where((n) => n.id != id).toList());
+    _notifyChanged();
   }
 
   Future<void> clearAll() async {
@@ -205,11 +294,17 @@ class NotificationService {
       notif.hashCode,
       notif.title,
       notif.body,
-const NotificationDetails(
+      const NotificationDetails(
         android: AndroidNotificationDetails(
           _channelId, 'KM Drive',
           importance: Importance.high,
           priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
         ),
       ),
     );

@@ -5,7 +5,8 @@ import '../../core/utils/formatters.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../widgets/common_widgets.dart';
-import 'notifications_screen.dart';
+import '../widgets/sync_status_widget.dart';
+import 'notifications_settings_screen.dart';
 import '../../data/services/notification_service.dart';
 import 'service_booking_screen.dart';
 import 'scan_screen.dart';
@@ -35,7 +36,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    NotificationService.instance.onNewNotification = null;
+    NotificationService.instance.removeNewNotificationListener('dashboard');
+    NotificationService.instance.removeListChangedListener('dashboard');
     super.dispose();
   }
 
@@ -52,9 +54,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     }
     // Live updates from FCM while dashboard is visible
-    NotificationService.instance.onNewNotification = (n) {
+    NotificationService.instance.addNewNotificationListener('dashboard', (n) {
       if (mounted) setState(() => _notifications.insert(0, n));
-    };
+    });
+    // Reload when notifications deleted/read in history screen
+    NotificationService.instance.addListChangedListener('dashboard', () async {
+      if (!mounted) return;
+      final list = await NotificationService.instance.getAll();
+      if (mounted) setState(() => _notifications = list);
+    });
   }
 
   @override
@@ -146,6 +154,16 @@ class _DashboardContentState extends State<_DashboardContent> {
 
         // ── Машина — высота адаптивная ────────────────────
         SizedBox(height: carH, child: _CarHero(vehicle: widget.vehicle)),
+
+        // ── Статус сети ───────────────────────────────────
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: SyncStatusBar(),
+          ),
+        ),
+        const SizedBox(height: 4),
 
         // ── Статусная полоска ─────────────────────────────
         _StatusStrip(
@@ -520,7 +538,7 @@ class _NotificationsSectionState
             TextButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                    builder: (_) => const NotificationsScreen()),
+                    builder: (_) => const NotificationsSettingsScreen()),
               ),
               child: Text(l10n.get('all'),
                   style: KmTextStyles.labelSmall

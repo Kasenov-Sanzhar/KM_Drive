@@ -5,8 +5,8 @@ import '../../data/models/models.dart';
 import '../../data/repositories/vehicle_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../widgets/common_widgets.dart';
+import 'notifications_settings_screen.dart';
 import 'language_screen.dart';
-import 'notifications_screen.dart';
 import 'settings_detail_screen.dart';
 import 'dealer_screen.dart';
 import 'warranty_screen.dart';
@@ -394,7 +394,7 @@ class _MenuRow extends StatelessWidget {
           switch (item.routeKey) {
             case 'notifications':
               Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                  MaterialPageRoute(builder: (_) => const NotificationsSettingsScreen()));
               break;
             case 'language':
               Navigator.of(context).push(

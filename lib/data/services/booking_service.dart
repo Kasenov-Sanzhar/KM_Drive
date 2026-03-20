@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'sync_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ============================================================
@@ -107,6 +109,8 @@ class BookingService {
     all.removeWhere((b) => b.id == entry.id);
     all.add(entry);
     await _persist(all);
+    // Sync to Firestore in background
+    unawaited(SyncService.instance.syncBooking(entry.toJson()));
   }
 
   Future<void> cancel(String id) async {

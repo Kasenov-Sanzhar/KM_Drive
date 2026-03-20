@@ -493,11 +493,15 @@ class AppNotification {
     required this.title,
     required this.type,
     required this.time,
+    this.body = '',       // расширенный текст уведомления
+    this.actionKey,       // l10n ключ кнопки действия
     this.isRead = false,
   });
 
   final String id;
   final String title;
+  final String body;
+  final String? actionKey; // если задан — показываем кнопку
   final NotificationType type;
   final DateTime time;
   final bool isRead;
@@ -506,12 +510,15 @@ class AppNotification {
     AppNotification(
       id: 'n-001',
       title: 'notif1',
+      body: 'notif1Body',
+      actionKey: 'notifActionBook',
       type: NotificationType.warning,
       time: DateTime.now().subtract(const Duration(hours: 2)),
     ),
     AppNotification(
       id: 'n-002',
       title: 'notif2',
+      body: 'notif2Body',
       type: NotificationType.success,
       time: DateTime.now().subtract(const Duration(days: 1)),
       isRead: true,
@@ -519,8 +526,27 @@ class AppNotification {
     AppNotification(
       id: 'n-003',
       title: 'notif3',
+      body: 'notif3Body',
+      actionKey: 'notifActionSubscribe',
       type: NotificationType.info,
       time: DateTime.now().subtract(const Duration(days: 3)),
+      isRead: true,
+    ),
+    AppNotification(
+      id: 'n-004',
+      title: 'notif4',
+      body: 'notif4Body',
+      type: NotificationType.warning,
+      time: DateTime.now().subtract(const Duration(days: 5)),
+      isRead: true,
+    ),
+    AppNotification(
+      id: 'n-005',
+      title: 'notif5',
+      body: 'notif5Body',
+      actionKey: 'notifActionDiag',
+      type: NotificationType.error,
+      time: DateTime.now().subtract(const Duration(days: 7)),
       isRead: true,
     ),
   ];
@@ -528,21 +554,26 @@ class AppNotification {
   // ── Сериализация ─────────────────────────────────────────
 
   AppNotification copyWithRead(bool read) => AppNotification(
-    id: id, title: title, type: type, time: time, isRead: read,
+    id: id, title: title, body: body, actionKey: actionKey,
+    type: type, time: time, isRead: read,
   );
 
   Map<String, dynamic> toJson() => {
-    'id':     id,
-    'title':  title,
-    'type':   type.name,
-    'time':   time.millisecondsSinceEpoch,
-    'isRead': isRead,
+    'id':        id,
+    'title':     title,
+    'body':      body,
+    'actionKey': actionKey,
+    'type':      type.name,
+    'time':      time.millisecondsSinceEpoch,
+    'isRead':    isRead,
   };
 
   static AppNotification fromJson(Map<String, dynamic> j) => AppNotification(
-    id:     j['id']    as String,
-    title:  j['title'] as String,
-    type:   NotificationType.values.firstWhere(
+    id:        j['id']        as String,
+    title:     j['title']     as String,
+    body:      j['body']      as String? ?? '',
+    actionKey: j['actionKey'] as String?,
+    type:      NotificationType.values.firstWhere(
       (e) => e.name == j['type'],
       orElse: () => NotificationType.info,
     ),
