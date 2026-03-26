@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/models.dart';
-import '../../data/repositories/vehicle_repository.dart';
+import '../../data/repositories/firestore_vehicle_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../widgets/common_widgets.dart';
 import 'scan_screen.dart';
@@ -30,7 +30,7 @@ class DiagnosticsScreen extends StatefulWidget {
 
 class _DiagnosticsScreenState extends State<DiagnosticsScreen>
     with TickerProviderStateMixin {
-  final _repo = MockVehicleRepository();
+  final _repo = FirestoreVehicleRepository();
 
   VehicleModel? _vehicle;
   List<DiagnosticSystem> _systems = [];

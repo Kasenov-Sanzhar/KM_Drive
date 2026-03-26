@@ -351,3 +351,80 @@ class KmMetricCell extends StatelessWidget {
     );
   }
 }
+// ── Auth text field (login + register screens) ────────────────
+
+class KmAuthTextField extends StatelessWidget {
+  const KmAuthTextField({
+    super.key,
+    required this.controller,
+    required this.label,
+    required this.hint,
+    required this.icon,
+    this.error        = false,
+    this.obscure      = false,
+    this.keyboardType,
+    this.onChanged,
+    this.suffix,
+    this.textCapitalization = TextCapitalization.none,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final IconData icon;
+  final bool error;
+  final bool obscure;
+  final TextInputType? keyboardType;
+  final ValueChanged<String>? onChanged;
+  final Widget? suffix;
+  final TextCapitalization textCapitalization;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = error ? KmColors.error : KmColors.border;
+    final iconColor   = error ? KmColors.error : KmColors.textMuted;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: KmTextStyles.caption
+          .copyWith(color: error ? KmColors.error : KmColors.textSecondary)),
+      const SizedBox(height: 6),
+      Container(
+        decoration: BoxDecoration(
+          color: error
+              ? KmColors.error.withValues(alpha: 0.06)
+              : KmColors.surface2,
+          borderRadius: BorderRadius.circular(KmRadius.md),
+          border: Border.all(color: borderColor, width: error ? 1.0 : 0.5),
+        ),
+        child: Row(children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 14),
+            child: Icon(icon, color: iconColor, size: 18)),
+          Expanded(
+            child: TextField(
+              controller:          controller,
+              obscureText:         obscure,
+              keyboardType:        keyboardType,
+              onChanged:           onChanged,
+              textCapitalization:  textCapitalization,
+              autofillHints:       const [],
+              enableSuggestions:   false,
+              autocorrect:         false,
+              style: KmTextStyles.bodyMedium,
+              decoration: InputDecoration(
+                hintText:       hint,
+                hintStyle:      KmTextStyles.caption,
+                border:         InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+              ),
+            ),
+          ),
+          if (suffix != null)
+            Padding(
+                padding: const EdgeInsets.only(right: 12), child: suffix!),
+        ]),
+      ),
+    ]);
+  }
+}

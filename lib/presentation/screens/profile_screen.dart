@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/models.dart';
-import '../../data/repositories/vehicle_repository.dart';
+import '../../data/repositories/firestore_vehicle_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../widgets/common_widgets.dart';
+import '../../data/services/auth_service.dart';
+import 'login_screen.dart';
 import 'notifications_settings_screen.dart';
 import 'language_screen.dart';
 import 'settings_detail_screen.dart';
@@ -25,7 +27,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _repo = MockVehicleRepository();
+  final _repo = FirestoreVehicleRepository();
   VehicleModel? _vehicle;
 
   @override
@@ -65,6 +67,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
               sliver: SliverToBoxAdapter(child: _SettingsMenu()),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              sliver: SliverToBoxAdapter(child: _LogoutButton()),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 100),
@@ -470,6 +476,70 @@ class _Footer extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
       ],
+    );
+  }
+}
+// ── Logout Button ─────────────────────────────────────────────
+
+class _LogoutButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (_) => AlertDialog(
+              backgroundColor: KmColors.surface,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(KmRadius.xl),
+                  side: const BorderSide(color: KmColors.border, width: 0.5)),
+              title: Text(l10n.get('authSignOutTitle'),
+                  style: KmTextStyles.bodyLarge,
+                  textAlign: TextAlign.center),
+              content: Text(l10n.get('authSignOutConfirm'),
+                  style: KmTextStyles.bodySmall,
+                  textAlign: TextAlign.center),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(l10n.get('bookingCancelBtn'),
+                      style: const TextStyle(
+                          color: KmColors.textMuted,
+                          fontFamily: 'DMSans', fontSize: 14))),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: KmColors.error,
+                      foregroundColor: Colors.white),
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(l10n.get('authSignOut'),
+                      style: const TextStyle(
+                          fontFamily: 'DMSans', fontSize: 14))),
+              ],
+            ),
+          );
+          if (confirmed == true && context.mounted) {
+            await AuthService.instance.signOut();
+            if (!context.mounted) return;
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (_) => false);
+          }
+        },
+        icon: const Icon(Icons.logout_rounded, size: 18),
+        label: Text(l10n.get('authSignOut')),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: KmColors.error, width: 0.5),
+          foregroundColor: KmColors.error,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(KmRadius.md)),
+          textStyle: const TextStyle(fontFamily: 'DMSans', fontSize: 14,
+              fontWeight: FontWeight.w500),
+        ),
+      ),
     );
   }
 }

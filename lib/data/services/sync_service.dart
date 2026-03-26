@@ -67,13 +67,13 @@ class SyncService {
     _setStatus(SyncStatus.syncing);
 
     try {
-      // Анонимная авторизация если не залогинен
-      if (_auth.currentUser == null) {
-        await _auth.signInAnonymously();
+      // Синхронизируем только реальных (email) пользователей
+      if (_auth.currentUser == null || _auth.currentUser!.isAnonymous) {
+        _setStatus(SyncStatus.offline);
+        return;
       }
 
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) { _setStatus(SyncStatus.offline); return; }
+      final uid = _auth.currentUser!.uid;
 
       // Подписываемся на данные автомобиля в реальном времени
       _firestoreSub?.cancel();

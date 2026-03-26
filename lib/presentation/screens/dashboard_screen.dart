@@ -3,7 +3,7 @@ import '../../core/theme/app_theme.dart';
 import '../../l10n/app_localizations.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/models.dart';
-import '../../data/repositories/vehicle_repository.dart';
+import '../../data/repositories/firestore_vehicle_repository.dart';
 import '../widgets/common_widgets.dart';
 import '../widgets/sync_status_widget.dart';
 import 'notifications_settings_screen.dart';
@@ -23,7 +23,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _repo = MockVehicleRepository();
+  final _repo = FirestoreVehicleRepository();
   VehicleModel? _vehicle;
   List<AppNotification> _notifications = [];
   bool _loading = true;

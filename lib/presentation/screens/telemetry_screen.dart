@@ -74,7 +74,6 @@ class _TelemetryScreenState extends State<TelemetryScreen>
 
   // GPS / Map
   GoogleMapController? _mapCtrl;
-  final Completer<GoogleMapController> _mapCompleter = Completer();
   final Set<Marker>   _markers  = {};
   final Set<Polyline> _polylines = {};
   int?   _selectedTrip;
@@ -113,9 +112,10 @@ class _TelemetryScreenState extends State<TelemetryScreen>
     // Сразу ставим маркер на Абая 8А (заглушка)
     _placeVehicleMarker(s.position, s.currentAddress);
     // Камера на позицию машины
-    final ctrl = await _mapCompleter.future;
-    ctrl.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: s.position, zoom: 15)));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _mapCtrl?.animateCamera(CameraUpdate.newCameraPosition(
+          CameraPosition(target: s.position, zoom: 15)));
+    });
   }
 
   void _startLiveSimulation() {
@@ -180,8 +180,7 @@ class _TelemetryScreenState extends State<TelemetryScreen>
       if (_summary != null) {
         _placeVehicleMarker(_summary!.position, _summary!.currentAddress);
         if (_followGps) {
-          final ctrl = await _mapCompleter.future;
-          ctrl.animateCamera(CameraUpdate.newCameraPosition(
+          _mapCtrl?.animateCamera(CameraUpdate.newCameraPosition(
               CameraPosition(target: _summary!.position, zoom: 15)));
         }
       }
@@ -388,6 +387,7 @@ class _TelemetryScreenState extends State<TelemetryScreen>
     _posStream?.cancel();
     _liveTimer?.cancel();
     _mapCtrl?.dispose();
+    _mapCtrl = null;
     super.dispose();
   }
 
@@ -474,7 +474,11 @@ class _TelemetryScreenState extends State<TelemetryScreen>
                     onTripTap: _showTrip,
                     onMapCreated: (c) {
                       _mapCtrl = c;
-                      if (!_mapCompleter.isCompleted) _mapCompleter.complete(c);
+                      // Animate to vehicle position once map is ready
+                      if (_summary != null) {
+                        c.animateCamera(CameraUpdate.newCameraPosition(
+                            CameraPosition(target: _summary!.position, zoom: 15)));
+                      }
                     },
                     onMapTap: () => setState(() => _followGps = false),
                     onZoomIn: _zoomIn,
@@ -1040,7 +1044,7 @@ class _TireCard extends StatelessWidget {
                   style: KmTextStyles.caption),
             ),
           ]),
-          KmProgressBar(value: (value / 3.2).clamp(0, 1), height: 3),
+          KmProgressBar(value: (value / 3.2).clamp(0, 1), height: 3, color: _color),
         ],
       ),
     );

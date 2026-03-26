@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/formatters.dart';
 import '../../data/models/models.dart';
-import '../../data/repositories/vehicle_repository.dart';
+import '../../data/repositories/firestore_vehicle_repository.dart';
 import '../../data/services/booking_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../widgets/common_widgets.dart';
@@ -22,7 +22,7 @@ class ServiceScreen extends StatefulWidget {
 
 class _ServiceScreenState extends State<ServiceScreen>
     with SingleTickerProviderStateMixin {
-  final _repo = MockVehicleRepository();
+  final _repo = FirestoreVehicleRepository();
   NextServiceInfo?    _nextService;
   List<ServiceRecord> _history = [];
   List<BookingEntry>  _bookings = [];
