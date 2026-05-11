@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'sync_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // ============================================================
-// KM DRIVE — BookingService
-// Хранит активные записи и историю в SharedPreferences
+// KM DRIVE — BookingService v2
+// Primary storage: Firestore (users/{uid}/bookings)
+// Fallback/cache:  SharedPreferences
 // ============================================================
 
 class BookingEntry {
@@ -44,21 +46,26 @@ class BookingEntry {
   String? review;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'serviceKey': serviceKey,
-    'serviceName': serviceName,
-    'serviceIcon': serviceIcon,
-    'date': date.toIso8601String(),
-    'time': time,
-    'priceKzt': priceKzt,
-    'extras': extras,
-    'comment': comment,
+    'id':              id,
+    'serviceKey':      serviceKey,
+    'serviceName':     serviceName,
+    'serviceIcon':     serviceIcon,
+    'date':            date.toIso8601String(),
+    'time':            time,
+    'priceKzt':        priceKzt,
+    'extras':          extras,
+    'comment':         comment,
     'reminderEnabled': reminderEnabled,
-    'status': status,
-    'center': center,
-    'master': master,
-    'rating': rating,
-    'review': review,
+    'status':          status,
+    'center':          center,
+    'master':          master,
+    'rating':          rating,
+    'review':          review,
+  };
+
+  Map<String, dynamic> toFirestore() => {
+    ...toJson(),
+    'updatedAt': FieldValue.serverTimestamp(),
   };
 
   factory BookingEntry.fromJson(Map<String, dynamic> j) => BookingEntry(
@@ -68,7 +75,7 @@ class BookingEntry {
     serviceIcon:     j['serviceIcon'] as String,
     date:            DateTime.parse(j['date'] as String),
     time:            j['time'] as String,
-    priceKzt:        j['priceKzt'] as int,
+    priceKzt:        (j['priceKzt'] as num).toInt(),
     extras:          List<String>.from(j['extras'] as List),
     comment:         j['comment'] as String,
     reminderEnabled: j['reminderEnabled'] as bool,
@@ -78,17 +85,155 @@ class BookingEntry {
     rating:          j['rating'] as int?,
     review:          j['review'] as String?,
   );
+
+  factory BookingEntry.fromFirestore(DocumentSnapshot doc) {
+    final j = doc.data() as Map<String, dynamic>;
+    // Firestore Timestamp → String для date
+    final rawDate = j['date'];
+    String dateStr;
+    if (rawDate is Timestamp) {
+      dateStr = rawDate.toDate().toIso8601String();
+    } else {
+      dateStr = rawDate as String;
+    }
+    return BookingEntry(
+      id:              doc.id,
+      serviceKey:      j['serviceKey'] as String? ?? '',
+      serviceName:     j['serviceName'] as String? ?? '',
+      serviceIcon:     j['serviceIcon'] as String? ?? '🔧',
+      date:            DateTime.parse(dateStr),
+      time:            j['time'] as String? ?? '',
+      priceKzt:        (j['priceKzt'] as num?)?.toInt() ?? 0,
+      extras:          List<String>.from(j['extras'] as List? ?? []),
+      comment:         j['comment'] as String? ?? '',
+      reminderEnabled: j['reminderEnabled'] as bool? ?? false,
+      status:          j['status'] as String? ?? 'pending',
+      center:          j['center'] as String? ?? '',
+      master:          j['master'] as String? ?? '',
+      rating:          j['rating'] as int?,
+      review:          j['review'] as String?,
+    );
+  }
 }
 
 class BookingService {
   BookingService._();
   static final instance = BookingService._();
 
-  static const _key = 'km_bookings_v1';
+  final _db   = FirebaseFirestore.instance;
+  final _auth = FirebaseAuth.instance;
 
+  static const _cacheKey = 'km_bookings_cache_v2';
+
+  String? get _uid => _auth.currentUser?.uid;
+
+  CollectionReference<Map<String, dynamic>>? get _bookingsRef {
+    final uid = _uid;
+    if (uid == null) return null;
+    return _db.collection('users').doc(uid).collection('bookings');
+  }
+
+  // ── Read ──────────────────────────────────────────────────
+
+  /// Загружает все записи. Firestore первичный, cache как fallback.
   Future<List<BookingEntry>> getAll() async {
+    final ref = _bookingsRef;
+    if (ref != null) {
+      try {
+        final snap = await ref
+            .orderBy('date', descending: true)
+            .get();
+        final entries = snap.docs
+            .map((d) => BookingEntry.fromFirestore(d))
+            .toList();
+        _persistCache(entries);
+        return entries;
+      } catch (_) {
+        // fall through to cache
+      }
+    }
+    return _fromCache();
+  }
+
+  /// Активная (ближайшая pending/confirmed) запись.
+  Future<BookingEntry?> getActive() async {
+    final all = await getAll();
+    final upcoming = all.where((b) =>
+        (b.status == 'pending' || b.status == 'confirmed') &&
+        b.date.isAfter(DateTime.now().subtract(const Duration(days: 1))));
+    if (upcoming.isEmpty) return null;
+    return upcoming.reduce((a, b) => a.date.isBefore(b.date) ? a : b);
+  }
+
+  // ── Write ─────────────────────────────────────────────────
+
+  /// Сохраняет запись в Firestore + кеш.
+  Future<void> save(BookingEntry entry) async {
+    // Обновляем кеш сразу (оптимистичный UI)
+    final cached = await _fromCache();
+    cached.removeWhere((b) => b.id == entry.id);
+    cached.add(entry);
+    await _persistCache(cached);
+
+    // Пишем в Firestore
+    final ref = _bookingsRef;
+    if (ref != null) {
+      await ref.doc(entry.id).set(
+        entry.toFirestore(),
+        SetOptions(merge: true),
+      );
+    }
+  }
+
+  /// Отменяет запись.
+  Future<void> cancel(String id) async {
+    // Кеш
+    final cached = await _fromCache();
+    for (final b in cached) {
+      if (b.id == id) b.status = 'canceled';
+    }
+    await _persistCache(cached);
+
+    // Firestore
+    final ref = _bookingsRef;
+    if (ref != null) {
+      await ref.doc(id).update({
+        'status':    'canceled',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  /// Сохраняет отзыв и переводит статус в done.
+  Future<void> saveReview(String id, int rating, String review) async {
+    // Кеш
+    final cached = await _fromCache();
+    for (final b in cached) {
+      if (b.id == id) {
+        b.rating = rating;
+        b.review = review;
+        b.status = 'done';
+      }
+    }
+    await _persistCache(cached);
+
+    // Firestore
+    final ref = _bookingsRef;
+    if (ref != null) {
+      await ref.doc(id).update({
+        'rating':    rating,
+        'review':    review,
+        'status':    'done',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+
+  // ── Cache helpers ─────────────────────────────────────────
+
+  Future<List<BookingEntry>> _fromCache() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getStringList(_key) ?? [];
+    final raw = prefs.getStringList(_cacheKey) ?? [];
     return raw.map((s) {
       try { return BookingEntry.fromJson(jsonDecode(s) as Map<String, dynamic>); }
       catch (_) { return null; }
@@ -96,68 +241,34 @@ class BookingService {
       ..sort((a, b) => b.date.compareTo(a.date));
   }
 
-  Future<BookingEntry?> getActive() async {
-    final all = await getAll();
-    try {
-      return all.firstWhere((b) =>
-        b.status == 'pending' || b.status == 'confirmed');
-    } catch (_) { return null; }
-  }
-
-  Future<void> save(BookingEntry entry) async {
-    final all = await getAll();
-    all.removeWhere((b) => b.id == entry.id);
-    all.add(entry);
-    await _persist(all);
-    // Sync to Firestore in background
-    unawaited(SyncService.instance.syncBooking(entry.toJson()));
-  }
-
-  Future<void> cancel(String id) async {
-    final all = await getAll();
-    for (final b in all) {
-      if (b.id == id) b.status = 'canceled';
-    }
-    await _persist(all);
-  }
-
-  Future<void> saveReview(String id, int rating, String review) async {
-    final all = await getAll();
-    for (final b in all) {
-      if (b.id == id) { b.rating = rating; b.review = review; b.status = 'done'; }
-    }
-    await _persist(all);
-  }
-
-  Future<void> _persist(List<BookingEntry> list) async {
+  Future<void> _persistCache(List<BookingEntry> list) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_key,
+    await prefs.setStringList(_cacheKey,
         list.map((b) => jsonEncode(b.toJson())).toList());
   }
 
-  /// Сброс демо-данных (для обновления)
+  // ── Demo data ─────────────────────────────────────────────
+
   Future<void> clearDemo() async {
-    final all = await getAll();
-    final noDemo = all.where((b) => !b.id.startsWith('demo_')).toList();
-    await _persist(noDemo);
+    final all = await _fromCache();
+    await _persistCache(all.where((b) => !b.id.startsWith('demo_')).toList());
   }
 
-  static const _demoVersion = 4; // увеличивай при изменении демо-данных
+  static const _demoVersion = 4;
   static const _versionKey  = 'km_bookings_demo_v';
 
-  /// Демо-данные: создаёт при первом запуске или при обновлении версии
   Future<void> seedIfEmpty() async {
     final prefs = await SharedPreferences.getInstance();
     final savedVersion = prefs.getInt(_versionKey) ?? 0;
-    final all = await getAll();
+    final all = await _fromCache();
 
-    // Обновляем только если демо устарело
     if (savedVersion < _demoVersion) {
-      await clearDemo(); // удаляем старые демо
+      await clearDemo();
     } else if (all.isNotEmpty) {
-      return; // демо актуально, пропускаем
+      return;
     }
     await prefs.setInt(_versionKey, _demoVersion);
+
     final now = DateTime.now();
     await save(BookingEntry(
       id: 'demo_1',

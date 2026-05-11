@@ -154,20 +154,7 @@ class SyncService {
     } catch (_) {} // Offline — игнорируем, данные сохранены локально
   }
 
-  // ── Сервисные записи в Firestore ──────────────────────────
-
-  Future<void> syncBooking(Map<String, dynamic> bookingData) async {
-    try {
-      final uid = _auth.currentUser?.uid;
-      if (uid == null) return;
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('bookings')
-          .doc(bookingData['id'] as String)
-          .set(bookingData, SetOptions(merge: true));
-    } catch (_) {}
-  }
+  // syncBooking перенесён в BookingService.save() → Firestore direct write
 
   // ── Подключение / статус сети ─────────────────────────────
 

@@ -109,6 +109,7 @@ class _ServiceBookingScreenState extends State<ServiceBookingScreen> {
       extras:          _selectedExtras.map((i) => svc.extras[i]).toList(),
       comment:         _commentCtrl.text.trim(),
       reminderEnabled: _reminderEnabled,
+      center:          _selectedCenter,
       status:          'confirmed',
     );
 
